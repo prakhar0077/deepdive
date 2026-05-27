@@ -1,0 +1,3951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>DeepDive - AI Course Generator</title>
+  
+  <!-- Google Fonts: Playfair Display & Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Material Symbols Outlined -->
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+
+  <style>
+    /* -------------------------------------------------------------
+       1. DESIGN TOKENS & SYSTEM FOUNDATION
+       ------------------------------------------------------------- */
+    :root {
+      --color-background: #f9f9fb;
+      --color-on-background: #1a1c1d;
+      --color-surface-base: rgba(255, 255, 255, 0.65);
+      --color-surface-solid: #ffffff;
+      --color-surface-container: #edeef0;
+      --color-on-surface: #1a1c1d;
+      --color-on-surface-variant: #4a4455;
+      
+      --color-primary: #630ed4;
+      --color-primary-rgb: 99, 14, 212;
+      --color-primary-container: #7c3aed;
+      --color-on-primary-container: #ede0ff;
+      --color-secondary: #006c49;
+      --color-secondary-container: #6cf8bb;
+      --color-outline: #7b7487;
+      --color-outline-variant: rgba(226, 226, 231, 0.45);
+      
+      --color-accent-mint: #10B981;
+      --color-accent-violet: #7C3AED;
+      --color-accent-blue: #0668b9;
+      --color-accent-lavender: #d2bbff;
+      
+      --font-display: 'Playfair Display', Georgia, serif;
+      --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
+      
+      --shadow-ambient: 0 8px 32px 0 rgba(31, 38, 135, 0.04);
+      --shadow-lifted: 0 16px 48px 0 rgba(99, 14, 212, 0.04), 0 8px 32px 0 rgba(0, 0, 0, 0.03);
+      --blur-standard: 24px;
+      --blur-high: 40px;
+    }
+
+    /* -------------------------------------------------------------
+       2. RESET & BASE LAYOUT
+       ------------------------------------------------------------- */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: linear-gradient(-45deg, #f5effd, #eefaf3, #f1f7fc, #f5effd);
+      background-size: 400% 400%;
+      animation: liquid-gradient 12s ease infinite;
+      color: var(--color-on-background);
+      font-family: var(--font-body);
+      font-size: 16px;
+      line-height: 1.6;
+      overflow-x: hidden;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    @keyframes liquid-gradient {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* Container lock for showcase - looks mobile on large screens but responds beautifully */
+    .app-viewport-container {
+      width: 100%;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      z-index: 10;
+    }
+
+    /* Specular Glowing Radial Aurora at the top */
+    .app-viewport-container::before {
+      content: '';
+      position: absolute;
+      top: -100px;
+      left: -50px;
+      right: -50px;
+      height: 450px;
+      background: radial-gradient(circle, rgba(124, 58, 237, 0.08) 0%, rgba(16, 185, 129, 0.06) 45%, rgba(6, 104, 185, 0.04) 70%, rgba(255, 255, 255, 0) 100%);
+      pointer-events: none;
+      z-index: 1;
+      filter: blur(30px);
+    }
+
+    /* Responsive Mobile Lock on Desktop - as requested by User and matching code.html */
+    @media (max-width: 1023px) {
+      .app-viewport-container {
+        max-width: 480px;
+        margin: 0 auto;
+        border-left: 1px solid var(--color-outline-variant);
+        border-right: 1px solid var(--color-outline-variant);
+        box-shadow: 0 0 40px rgba(0, 0, 0, 0.05);
+        background: transparent; /* Transparent to let body moving gradient and blobs show through */
+      }
+    }
+
+    @media (min-width: 1024px) {
+      body {
+        background-image: radial-gradient(at 0% 0%, rgba(124, 58, 237, 0.04) 0px, transparent 50%),
+                          radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.04) 0px, transparent 50%);
+      }
+      .app-viewport-container {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 0 40px;
+      }
+    }
+
+    /* -------------------------------------------------------------
+       3. AMBIENT DRIFTING LIQUID BLOBS
+       ------------------------------------------------------------- */
+    .ambient-background {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      overflow: hidden;
+    }
+
+    .liquid-blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.45;
+      mix-blend-mode: multiply;
+      pointer-events: none;
+    }
+
+    .blob-primary {
+      background-color: rgba(124, 58, 237, 0.15); /* Cloud Lavender */
+      width: 350px;
+      height: 350px;
+      top: -50px;
+      left: -100px;
+      animation: drift-blob-1 25s infinite alternate ease-in-out;
+    }
+
+    .blob-secondary {
+      background-color: rgba(16, 185, 129, 0.12); /* Mint Green */
+      width: 400px;
+      height: 400px;
+      bottom: 10%;
+      right: -150px;
+      animation: drift-blob-2 30s infinite alternate ease-in-out;
+    }
+
+    .blob-tertiary {
+      background-color: rgba(6, 104, 185, 0.08); /* Cloud Blue */
+      width: 300px;
+      height: 300px;
+      top: 40%;
+      left: 30%;
+      animation: drift-blob-3 20s infinite alternate ease-in-out;
+    }
+
+    @keyframes drift-blob-1 {
+      0% { transform: translate(0px, 0px) scale(1); }
+      50% { transform: translate(60px, 40px) scale(1.1); }
+      100% { transform: translate(-30px, 80px) scale(0.9); }
+    }
+
+    @keyframes drift-blob-2 {
+      0% { transform: translate(0px, 0px) scale(1); }
+      50% { transform: translate(-80px, -50px) scale(0.85); }
+      100% { transform: translate(40px, 30px) scale(1.05); }
+    }
+
+    @keyframes drift-blob-3 {
+      0% { transform: translate(0px, 0px) scale(1); }
+      50% { transform: translate(50px, -70px) scale(1.15); }
+      100% { transform: translate(-50px, 40px) scale(0.9); }
+    }
+
+    /* -------------------------------------------------------------
+       4. PREMIUM GLASS STYLING SYSTEM
+       ------------------------------------------------------------- */
+    .glass-panel {
+      background: linear-gradient(to bottom, rgba(255, 255, 255, 0.72) 0%, rgba(255, 255, 255, 0.42) 100%);
+      backdrop-filter: blur(var(--blur-standard));
+      -webkit-backdrop-filter: blur(var(--blur-standard));
+      border: 1px solid var(--color-outline-variant);
+      border-radius: 1rem;
+      box-shadow: var(--shadow-ambient);
+      transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .glass-panel:hover {
+      border-color: rgba(124, 58, 237, 0.25);
+    }
+
+    .glass-input {
+      background: rgba(255, 255, 255, 0.6);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--color-outline-variant);
+      border-radius: 9999px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .glass-input:focus-within {
+      background: rgba(255, 255, 255, 0.85);
+      border-color: rgba(124, 58, 237, 0.5);
+      box-shadow: 0 8px 24px rgba(124, 58, 237, 0.08);
+    }
+
+    .glass-popover {
+      background: linear-gradient(to bottom, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.6) 100%);
+      backdrop-filter: blur(var(--blur-high));
+      -webkit-backdrop-filter: blur(var(--blur-high));
+      border: 1px solid var(--color-outline-variant);
+      border-radius: 1.5rem;
+      box-shadow: var(--shadow-lifted);
+    }
+
+    /* Pebble Buttons */
+    .btn-pebble {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 24px;
+      border-radius: 9999px;
+      font-family: var(--font-body);
+      font-size: 14px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-pebble::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(255, 255, 255, 0.15);
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .btn-pebble:hover::after {
+      opacity: 1;
+    }
+
+    .btn-pebble:active {
+      transform: scale(0.97);
+    }
+
+    .btn-primary {
+      background-color: var(--color-accent-violet);
+      color: #ffffff;
+      box-shadow: 0 4px 20px rgba(124, 58, 237, 0.25);
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 8px 28px rgba(124, 58, 237, 0.35);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background-color: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--color-outline-variant);
+      color: var(--color-accent-violet);
+    }
+
+    .btn-secondary:hover {
+      background-color: rgba(255, 255, 255, 0.95);
+      border-color: rgba(124, 58, 237, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .btn-mint {
+      background-color: var(--color-accent-mint);
+      color: #ffffff;
+      box-shadow: 0 4px 20px rgba(16, 185, 129, 0.2);
+    }
+
+    .btn-mint:hover {
+      box-shadow: 0 8px 28px rgba(16, 185, 129, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .chip-suggest {
+      background: rgba(255, 255, 255, 0.55);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid var(--color-outline-variant);
+      border-radius: 9999px;
+      padding: 10px 18px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--color-on-surface-variant);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .chip-suggest span {
+      font-size: 18px;
+      color: var(--color-accent-violet);
+      transition: transform 0.3s ease;
+    }
+
+    .chip-suggest:hover {
+      background: rgba(255, 255, 255, 0.95);
+      border-color: rgba(124, 58, 237, 0.25);
+      color: var(--color-on-surface);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.02);
+    }
+
+    .chip-suggest:hover span {
+      transform: scale(1.15);
+    }
+
+    /* -------------------------------------------------------------
+       5. MAIN NAVIGATION (HEADER)
+       ------------------------------------------------------------- */
+    .app-header {
+      position: sticky;
+      top: 0;
+      width: 100%;
+      height: 64px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 20px;
+      z-index: 100;
+      background: rgba(245, 239, 253, 0.45);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.015);
+    }
+
+    .header-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--color-on-surface);
+      transition: background-color 0.2s ease, transform 0.2s ease;
+    }
+
+    .header-btn:hover {
+      background-color: rgba(124, 58, 237, 0.06);
+      transform: scale(1.05);
+    }
+
+    .header-btn:active {
+      transform: scale(0.95);
+    }
+
+    .app-logo {
+      font-family: var(--font-display);
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--color-primary);
+      text-decoration: none;
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      user-select: none;
+      pointer-events: auto;
+      cursor: pointer;
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      background: linear-gradient(135deg, var(--color-primary) 0%, #7C3AED 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .app-logo:hover {
+      transform: translateX(-50%) scale(1.05);
+    }
+
+    .app-logo:active {
+      transform: translateX(-50%) scale(0.95);
+    }
+
+    /* -------------------------------------------------------------
+       6. GLOBAL MAIN CONTENT
+       ------------------------------------------------------------- */
+    .app-main {
+      flex: 1;
+      padding: 24px 20px 100px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      z-index: 10;
+    }
+
+    /* Screen State Engine Classes */
+    .app-screen {
+      display: none;
+      flex-direction: column;
+      animation: fadeInScreen 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      width: 100%;
+    }
+
+    .app-screen.active {
+      display: flex;
+    }
+
+    @keyframes fadeInScreen {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* -------------------------------------------------------------
+       7. SCREEN: HOME
+       ------------------------------------------------------------- */
+    .home-hero {
+      text-align: center;
+      margin-top: 60px;
+      margin-bottom: 32px;
+      position: relative;
+    }
+
+    .home-hero h2 {
+      font-family: var(--font-display);
+      font-size: 40px;
+      font-weight: 600;
+      line-height: 1.15;
+      letter-spacing: -0.01em;
+      color: var(--color-on-background);
+      margin-bottom: 8px;
+      position: relative;
+      display: inline-block;
+    }
+
+    /* Under-line specular glow for title */
+    .home-hero h2::after {
+      content: '';
+      position: absolute;
+      bottom: -6px;
+      left: 20%;
+      right: 20%;
+      height: 4px;
+      background: radial-gradient(circle, rgba(124,58,237,0.15) 0%, rgba(124,58,237,0) 80%);
+      filter: blur(1px);
+    }
+
+    /* Frosted Glass Search */
+    .search-container {
+      width: 100%;
+      padding: 6px 6px 6px 20px;
+      display: flex;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .search-container span.search-icon {
+      color: var(--color-outline);
+      margin-right: 12px;
+      font-size: 24px;
+      transition: color 0.3s ease;
+    }
+
+    .search-container:focus-within span.search-icon {
+      color: var(--color-accent-violet);
+    }
+
+    .search-input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      outline: none;
+      font-family: var(--font-body);
+      font-size: 16px;
+      color: var(--color-on-background);
+      padding: 10px 0;
+    }
+
+    .search-input::placeholder {
+      color: rgba(74, 68, 85, 0.5);
+    }
+
+    .search-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--color-accent-violet);
+      color: white;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.2);
+    }
+
+    .search-btn:hover {
+      background: var(--color-primary);
+      transform: scale(1.05);
+    }
+
+    .search-btn span {
+      font-size: 20px;
+    }
+
+    .suggestions-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      width: 100%;
+      margin-top: 12px;
+    }
+
+    /* -------------------------------------------------------------
+       8. CURRICULUM CUSTOMIZER (POP-OVER DRAWER)
+       ------------------------------------------------------------- */
+    .customizer-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(26, 28, 29, 0.15);
+      backdrop-filter: blur(4px);
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .customizer-backdrop.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .customizer-drawer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      max-height: 85vh;
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+      padding: 24px 20px 40px;
+      transform: translateY(100%);
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      z-index: 210;
+    }
+
+    @media (max-width: 1023px) {
+      .customizer-drawer {
+        max-width: 480px;
+        margin: 0 auto;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .customizer-drawer {
+        position: fixed;
+        bottom: auto;
+        top: 50%;
+        left: 50%;
+        right: auto;
+        transform: translate(-50%, -40%) scale(0.95);
+        width: 500px;
+        max-height: 90vh;
+        border-radius: 1.5rem;
+        opacity: 0;
+        pointer-events: none;
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .customizer-backdrop.active + .customizer-drawer {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+        pointer-events: auto;
+      }
+    }
+
+    .customizer-drawer.active {
+      transform: translateY(0);
+    }
+
+    .drawer-handle {
+      width: 40px;
+      height: 4px;
+      background: rgba(0, 0, 0, 0.1);
+      border-radius: 9999px;
+      margin: 0 auto 18px;
+    }
+
+    .drawer-title {
+      font-family: var(--font-display);
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      color: var(--color-on-background);
+    }
+
+    .customizer-group {
+      margin-bottom: 24px;
+    }
+
+    .customizer-label {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-outline);
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    .options-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .option-pill {
+      background: rgba(255, 255, 255, 0.5);
+      border: 1px solid var(--color-outline-variant);
+      border-radius: 12px;
+      padding: 12px;
+      text-align: center;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      color: var(--color-on-surface-variant);
+    }
+
+    .option-pill:hover {
+      background: rgba(255, 255, 255, 0.85);
+      border-color: rgba(124, 58, 237, 0.2);
+    }
+
+    .option-pill.active {
+      background: var(--color-on-primary-container);
+      border-color: var(--color-accent-violet);
+      color: var(--color-accent-violet);
+    }
+
+    /* -------------------------------------------------------------
+       9. SCREEN: LOADING & GENERATING
+       ------------------------------------------------------------- */
+    .loading-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      text-align: center;
+      padding: 40px 20px;
+      min-height: 450px;
+    }
+
+    /* Premium dynamic glass loading ring */
+    .liquid-spinner-wrapper {
+      position: relative;
+      width: 120px;
+      height: 120px;
+      margin-bottom: 40px;
+    }
+
+    .spinner-ring {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 6px solid transparent;
+      border-top-color: var(--color-accent-violet);
+      animation: spin 1.8s linear infinite;
+    }
+
+    .spinner-ring-inner {
+      position: absolute;
+      inset: 12px;
+      border-radius: 50%;
+      border: 4px solid transparent;
+      border-bottom-color: var(--color-accent-mint);
+      animation: spin-reverse 2.2s linear infinite;
+    }
+
+    .spinner-core {
+      position: absolute;
+      inset: 24px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(255,255,255,0.8), rgba(255,255,255,0.3));
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 2px 5px rgba(255,255,255,0.5), 0 4px 15px rgba(0,0,0,0.03);
+    }
+
+    .spinner-core span {
+      font-size: 32px;
+      color: var(--color-accent-violet);
+      animation: pulse 1.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    @keyframes spin-reverse {
+      0% { transform: rotate(360deg); }
+      100% { transform: rotate(0deg); }
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.9); opacity: 0.7; }
+      100% { transform: scale(1.1); opacity: 1; }
+    }
+
+    .loading-step-title {
+      font-family: var(--font-display);
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--color-on-background);
+      margin-bottom: 12px;
+      height: 32px; /* Fixed height to prevent shifting */
+    }
+
+    .loading-step-sub {
+      font-size: 14px;
+      color: var(--color-on-surface-variant);
+      margin-bottom: 32px;
+      height: 20px;
+    }
+
+    /* Elegant shimmering progress bar */
+    .shimmer-progress-track {
+      width: 100%;
+      max-width: 280px;
+      height: 6px;
+      background: rgba(226, 226, 231, 0.6);
+      border-radius: 9999px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .shimmer-progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--color-accent-violet) 0%, var(--color-accent-mint) 100%);
+      border-radius: 9999px;
+      transition: width 0.4s ease;
+      position: relative;
+    }
+
+    .shimmer-progress-bar::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+      animation: shimmer 1.5s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    /* -------------------------------------------------------------
+       10. SCREEN: COURSE WORKSPACE
+       ------------------------------------------------------------- */
+    .workspace-header {
+      margin-bottom: 20px;
+    }
+
+    .back-btn-row {
+      margin-bottom: 12px;
+    }
+
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: transparent;
+      border: none;
+      color: var(--color-accent-violet);
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .back-btn span {
+      font-size: 18px;
+    }
+
+    .course-title-block h3 {
+      font-family: var(--font-display);
+      font-size: 28px;
+      font-weight: 600;
+      line-height: 1.25;
+      color: var(--color-on-background);
+      margin-bottom: 8px;
+    }
+
+    /* Overall Course Progress Mini */
+    .course-progress-block {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .mini-progress-track {
+      flex: 1;
+      height: 6px;
+      background: rgba(226, 226, 231, 0.6);
+      border-radius: 9999px;
+      overflow: hidden;
+    }
+
+    .mini-progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--color-accent-violet), var(--color-accent-mint));
+      border-radius: 9999px;
+      transition: width 0.5s ease;
+    }
+
+    .progress-percent-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--color-accent-mint);
+      min-width: 36px;
+    }
+
+    /* Layout structure for Workspace: Responsive Side-by-Side */
+    .workspace-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      width: 100%;
+    }
+
+    @media (min-width: 1024px) {
+      .workspace-layout {
+        flex-direction: row;
+        align-items: flex-start;
+      }
+      .workspace-sidebar {
+        width: 340px;
+        flex-shrink: 0;
+        position: sticky;
+        top: 88px;
+      }
+      .workspace-pane {
+        flex: 1;
+        min-width: 0; /* Prevent overflow */
+      }
+    }
+
+    /* Sidebar Chapters List */
+    .chapters-card {
+      padding: 20px;
+    }
+
+    .chapters-card h4 {
+      font-family: var(--font-body);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-outline);
+      margin-bottom: 14px;
+    }
+
+    .chapter-list-items {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .chapter-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.3);
+      border: 1px solid transparent;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .chapter-item:hover {
+      background: rgba(255, 255, 255, 0.75);
+      border-color: rgba(124, 58, 237, 0.15);
+    }
+
+    .chapter-item.active {
+      background: rgba(255, 255, 255, 0.9);
+      border-color: rgba(124, 58, 237, 0.35);
+      box-shadow: 0 4px 16px rgba(124, 58, 237, 0.03);
+    }
+
+    .chapter-status-dot {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 2px solid var(--color-outline-variant);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.3s ease;
+    }
+
+    .chapter-item.completed .chapter-status-dot {
+      background: var(--color-accent-mint);
+      border-color: var(--color-accent-mint);
+      color: white;
+    }
+
+    .chapter-item.completed .chapter-status-dot span {
+      display: block !important;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .chapter-status-dot span {
+      display: none;
+    }
+
+    .chapter-item.active .chapter-status-dot {
+      border-color: var(--color-accent-violet);
+    }
+
+    .chapter-item-details {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .chapter-index {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--color-outline);
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+
+    .chapter-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-on-background);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Main workspace core tab view */
+    .workspace-pane-card {
+      padding: 0;
+      overflow: hidden;
+    }
+
+    /* Horizontal Glass Workspace Tabs */
+    .workspace-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--color-outline-variant);
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .workspace-tab {
+      flex: 1;
+      padding: 16px 8px;
+      border: none;
+      background: transparent;
+      font-family: var(--font-body);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-on-surface-variant);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      position: relative;
+      transition: all 0.25s ease;
+    }
+
+    .workspace-tab span {
+      font-size: 20px;
+    }
+
+    .workspace-tab:hover {
+      color: var(--color-on-surface);
+      background: rgba(255, 255, 255, 0.4);
+    }
+
+    .workspace-tab.active {
+      color: var(--color-accent-violet);
+      background: rgba(255, 255, 255, 0.85);
+    }
+
+    .workspace-tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 10%;
+      right: 10%;
+      height: 3px;
+      background-color: var(--color-accent-violet);
+      border-top-left-radius: 3px;
+      border-top-right-radius: 3px;
+    }
+
+    /* Tab Content Boxes */
+    .tab-content {
+      padding: 24px 20px;
+      display: none;
+      animation: fadeInTab 0.35s ease forwards;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    @keyframes fadeInTab {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Tab 1: Custom Video Player */
+    .video-player-container {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background-color: #0d0a15;
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: inset 0 0 40px rgba(0,0,0,0.5);
+      margin-bottom: 20px;
+    }
+
+    .video-thumbnail-overlay {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+      transition: opacity 0.4s ease;
+    }
+
+    /* YouTube Play Button Styling (Organic Pebble shape) */
+    .video-play-btn {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.25);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .video-play-btn span {
+      font-size: 36px;
+      color: var(--color-accent-violet);
+      margin-left: 4px;
+    }
+
+    .video-play-btn:hover {
+      transform: scale(1.08);
+      background: #ffffff;
+      box-shadow: 0 16px 40px rgba(124, 58, 237, 0.3);
+    }
+
+    .video-play-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* HTML Video / Mock Active Video interface */
+    .mock-video-interface {
+      width: 100%;
+      height: 100%;
+      display: none;
+      position: relative;
+      background: black;
+    }
+
+    .mock-video-embed {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    .video-info-block h4 {
+      font-family: var(--font-display);
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--color-on-background);
+      margin-bottom: 8px;
+    }
+
+    .video-meta {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      color: var(--color-outline);
+      font-weight: 500;
+    }
+
+    .video-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .video-meta-item span {
+      font-size: 16px;
+    }
+
+    .video-takeaways {
+      padding: 16px;
+      background: rgba(124, 58, 237, 0.03);
+      border-left: 3px solid var(--color-accent-violet);
+      border-radius: 4px 12px 12px 4px;
+    }
+
+    .video-takeaways h5 {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--color-accent-violet);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+
+    .video-takeaways-list {
+      list-style-type: none;
+      font-size: 14px;
+      color: var(--color-on-surface-variant);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .video-takeaways-list li {
+      position: relative;
+      padding-left: 18px;
+    }
+
+    .video-takeaways-list li::before {
+      content: '✦';
+      position: absolute;
+      left: 0;
+      color: var(--color-accent-violet);
+    }
+
+    /* Tab 2: Premium Article Reading Room */
+    .article-container {
+      font-family: var(--font-body);
+    }
+
+    .article-header h4 {
+      font-family: var(--font-display);
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--color-on-background);
+      margin-bottom: 12px;
+      line-height: 1.3;
+    }
+
+    .article-body {
+      font-size: 16px;
+      color: var(--color-on-surface-variant);
+      line-height: 1.7;
+    }
+
+    .article-body p {
+      margin-bottom: 18px;
+    }
+
+    .article-highlight-box {
+      background: rgba(16, 185, 129, 0.03);
+      border-left: 3px solid var(--color-accent-mint);
+      border-radius: 4px 12px 12px 4px;
+      padding: 16px;
+      margin: 20px 0;
+    }
+
+    .article-highlight-box h5 {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--color-accent-mint);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+
+    /* Clickable terms glossary inside articles */
+    .glossary-term {
+      border-bottom: 1px dotted var(--color-accent-violet);
+      color: var(--color-accent-violet);
+      font-weight: 600;
+      cursor: help;
+      position: relative;
+    }
+
+    /* Tab 3: Interactive Quiz Hub */
+    .quiz-container {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .quiz-question-block {
+      margin-bottom: 24px;
+    }
+
+    .quiz-num {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--color-accent-violet);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+
+    .quiz-text {
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--color-on-background);
+      line-height: 1.4;
+    }
+
+    .quiz-options {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .quiz-option {
+      background: rgba(255, 255, 255, 0.5);
+      border: 1px solid var(--color-outline-variant);
+      border-radius: 12px;
+      padding: 14px 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--color-on-surface-variant);
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .quiz-option:hover {
+      background: rgba(255, 255, 255, 0.9);
+      border-color: rgba(124, 58, 237, 0.2);
+    }
+
+    .quiz-option-marker {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 1px solid var(--color-outline-variant);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--color-outline);
+      flex-shrink: 0;
+      background: white;
+      transition: all 0.2s ease;
+    }
+
+    /* Option Correct visual state (Liquid Mint Glass) */
+    .quiz-option.correct {
+      background: rgba(16, 185, 129, 0.08);
+      border-color: var(--color-accent-mint);
+      color: #005a3c;
+    }
+
+    .quiz-option.correct .quiz-option-marker {
+      background: var(--color-accent-mint);
+      border-color: var(--color-accent-mint);
+      color: white;
+    }
+
+    /* Option Incorrect visual state (Liquid Red Glass) */
+    .quiz-option.wrong {
+      background: rgba(244, 63, 94, 0.08);
+      border-color: #f43f5e;
+      color: #7f1d1d;
+    }
+
+    .quiz-option.wrong .quiz-option-marker {
+      background: #f43f5e;
+      border-color: #f43f5e;
+      color: white;
+    }
+
+    .quiz-feedback-box {
+      margin-top: 24px;
+      padding: 16px;
+      border-radius: 12px;
+      display: none;
+      animation: fadeInTab 0.3s ease;
+    }
+
+    .quiz-feedback-box.correct {
+      background: rgba(16, 185, 129, 0.03);
+      border: 1px solid rgba(16, 185, 129, 0.15);
+      display: block;
+    }
+
+    .quiz-feedback-box.wrong {
+      background: rgba(244, 63, 94, 0.03);
+      border: 1px solid rgba(244, 63, 94, 0.15);
+      display: block;
+    }
+
+    .quiz-feedback-title {
+      font-weight: 700;
+      font-size: 14px;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .quiz-feedback-box.correct .quiz-feedback-title { color: var(--color-accent-mint); }
+    .quiz-feedback-box.wrong .quiz-feedback-title { color: #f43f5e; }
+
+    .quiz-explanation {
+      font-size: 14px;
+      color: var(--color-on-surface-variant);
+      line-height: 1.5;
+    }
+
+    .quiz-action-bar {
+      margin-top: 24px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    /* Quiz Finish/Result Summary Overlay */
+    .quiz-result-view {
+      text-align: center;
+      padding: 30px 10px;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .quiz-score-badge {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: var(--color-on-primary-container);
+      border: 2px solid var(--color-accent-violet);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .quiz-score-badge h5 {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--color-accent-violet);
+      line-height: 1.1;
+    }
+
+    .quiz-score-badge span {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--color-outline);
+    }
+
+    .quiz-result-view h4 {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .quiz-result-view p {
+      font-size: 14px;
+      color: var(--color-on-surface-variant);
+      margin-bottom: 24px;
+      max-width: 280px;
+    }
+
+    /* -------------------------------------------------------------
+       11. SCREEN: LIBRARY / MY COURSES
+       ------------------------------------------------------------- */
+    .library-heading {
+      font-family: var(--font-display);
+      font-size: 32px;
+      font-weight: 600;
+      color: var(--color-on-background);
+      margin-bottom: 6px;
+    }
+
+    .library-sub {
+      font-size: 14px;
+      color: var(--color-on-surface-variant);
+      margin-bottom: 24px;
+    }
+
+    .library-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      width: 100%;
+    }
+
+    @media (min-width: 768px) {
+      .library-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+    }
+
+    .course-card {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      min-height: 160px;
+      cursor: pointer;
+    }
+
+    .course-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 36px rgba(124, 58, 237, 0.06);
+    }
+
+    .course-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+      gap: 12px;
+    }
+
+    .course-card-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: var(--color-on-primary-container);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-accent-violet);
+    }
+
+    .course-card-icon span {
+      font-size: 24px;
+    }
+
+    /* Circular SVG Progress Gauge */
+    .progress-circle-wrapper {
+      position: relative;
+      width: 48px;
+      height: 48px;
+    }
+
+    .progress-circle-svg {
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+    }
+
+    .progress-circle-bg {
+      fill: none;
+      stroke: rgba(226, 226, 231, 0.6);
+      stroke-width: 4px;
+    }
+
+    .progress-circle-bar {
+      fill: none;
+      stroke: var(--color-accent-mint);
+      stroke-width: 4px;
+      stroke-linecap: round;
+      stroke-dasharray: 126; /* 2 * PI * r (r=20) */
+      stroke-dashoffset: 126;
+      transition: stroke-dashoffset 0.6s ease;
+    }
+
+    .progress-circle-percent {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--color-accent-mint);
+    }
+
+    .course-card-title {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 600;
+      line-height: 1.3;
+      color: var(--color-on-background);
+      margin-bottom: 6px;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      min-height: 46px;
+    }
+
+    .course-card-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: auto;
+      font-size: 12px;
+      color: var(--color-outline);
+      font-weight: 600;
+    }
+
+    .empty-library-view {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 60px 20px;
+      background: rgba(255,255,255,0.25);
+      border-radius: 1rem;
+      border: 1px dashed var(--color-outline-variant);
+    }
+
+    .empty-library-view span {
+      font-size: 48px;
+      color: var(--color-outline-variant);
+      margin-bottom: 16px;
+    }
+
+    .empty-library-view p {
+      font-size: 14px;
+      color: var(--color-on-surface-variant);
+      margin-bottom: 20px;
+    }
+
+    /* -------------------------------------------------------------
+       12. FLOATING BOTTOM NAVIGATION CAPSULE
+       ------------------------------------------------------------- */
+    .app-nav-bar-container {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 100;
+      width: calc(100% - 40px);
+      display: flex;
+      justify-content: center;
+      pointer-events: none; /* Let clicks pass through outside the capsule */
+    }
+
+    @media (max-width: 1023px) {
+      .app-nav-bar-container {
+        max-width: 440px; /* Stays centered on the locked screen */
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .app-nav-bar-container {
+        max-width: 320px;
+      }
+    }
+
+    .app-nav-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px;
+      background: rgba(255, 255, 255, 0.45);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 9999px;
+      box-shadow: 0 10px 30px rgba(31, 38, 135, 0.08), inset 0 2px 4px rgba(255,255,255,0.5);
+      pointer-events: auto; /* Re-enable clicks on the nav itself */
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 24px;
+      border: none;
+      background: transparent;
+      color: var(--color-on-surface-variant);
+      font-family: var(--font-body);
+      font-size: 13px;
+      font-weight: 700;
+      border-radius: 9999px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .nav-item span {
+      font-size: 20px;
+    }
+
+    .nav-item:hover {
+      color: var(--color-on-surface);
+      background-color: rgba(255,255,255,0.4);
+    }
+
+    .nav-item.active {
+      background-color: rgba(124, 58, 237, 0.1);
+      color: var(--color-accent-violet);
+    }
+
+    .nav-item.active span {
+      font-variation-settings: 'FILL' 1; /* Filled material symbols icon */
+    }
+
+    /* Refined Library Styling (Screenshot Adaptation) */
+    .library-profile-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      width: 100%;
+    }
+
+    .library-profile-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .library-profile-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--color-on-primary-container);
+      color: var(--color-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 700;
+      border: 1px solid rgba(124, 58, 237, 0.2);
+      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.05);
+    }
+
+    .library-profile-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .library-profile-greeting {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-outline);
+    }
+
+    .library-profile-name {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--color-on-background);
+    }
+
+    .library-profile-bell {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid var(--color-outline-variant);
+      background: rgba(255, 255, 255, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--color-on-surface);
+      transition: all 0.25s ease;
+    }
+
+    .library-profile-bell:hover {
+      background: #ffffff;
+      border-color: rgba(124, 58, 237, 0.25);
+      color: var(--color-primary);
+    }
+
+    /* Library Search & Filters */
+    .library-search-row {
+      display: flex;
+      gap: 12px;
+      width: 100%;
+      margin-bottom: 20px;
+    }
+
+    .library-search-input-wrapper {
+      flex: 1;
+      padding: 6px 16px;
+      display: flex;
+      align-items: center;
+    }
+
+    .library-search-input-wrapper span {
+      color: var(--color-outline);
+      margin-right: 10px;
+    }
+
+    .library-search-input {
+      border: none;
+      background: transparent;
+      outline: none;
+      width: 100%;
+      font-family: var(--font-body);
+      font-size: 14px;
+      color: var(--color-on-background);
+      padding: 8px 0;
+    }
+
+    .library-search-filter-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 1px solid var(--color-outline-variant);
+      background: rgba(255, 255, 255, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--color-on-surface);
+      transition: all 0.25s ease;
+    }
+
+    .library-search-filter-btn:hover {
+      background: #ffffff;
+      border-color: rgba(124, 58, 237, 0.25);
+    }
+
+    /* Category Pill Navigation */
+    .library-categories-scroll {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      width: 100%;
+      padding-bottom: 8px;
+      margin-bottom: 24px;
+      scrollbar-width: none;
+    }
+
+    .library-categories-scroll::-webkit-scrollbar {
+      display: none;
+    }
+
+    .category-pill {
+      background: rgba(255, 255, 255, 0.5);
+      border: 1px solid var(--color-outline-variant);
+      border-radius: 9999px;
+      padding: 8px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-on-surface-variant);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.25s ease;
+    }
+
+    .category-pill:hover {
+      background: rgba(255, 255, 255, 0.85);
+      color: var(--color-on-surface);
+    }
+
+    .category-pill.active {
+      background: #1a1c1d;
+      border-color: #1a1c1d;
+      color: #ffffff;
+    }
+
+    /* Featured Horizontal Course Card (Last Studied) */
+    .featured-course-card {
+      background: linear-gradient(135deg, #fbf7f0 0%, #f4e8d3 100%);
+      border-radius: 1.5rem;
+      border: 1px solid rgba(226, 226, 231, 0.45);
+      box-shadow: var(--shadow-ambient);
+      padding: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+      position: relative;
+      overflow: hidden;
+      width: 100%;
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+    }
+
+    .featured-course-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.05);
+    }
+
+    .featured-left {
+      flex: 1;
+      max-width: 60%;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      z-index: 2;
+    }
+
+    .featured-tag-badge {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(226, 226, 231, 0.6);
+      border-radius: 9999px;
+      padding: 6px 12px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--color-accent-violet);
+      margin-bottom: 12px;
+      display: inline-block;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .featured-title {
+      font-family: var(--font-display);
+      font-size: 24px;
+      font-weight: 600;
+      line-height: 1.25;
+      color: #1a1c1d;
+      margin-bottom: 6px;
+    }
+
+    .featured-author {
+      font-size: 13px;
+      color: var(--color-outline);
+      margin-bottom: 20px;
+      font-weight: 500;
+    }
+
+    .featured-action-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+    }
+
+    .slide-to-resume-container {
+      width: 100%;
+      height: 44px;
+      background: rgba(255, 255, 255, 0.55);
+      border: 1px solid rgba(26, 28, 29, 0.15);
+      border-radius: 9999px;
+      position: relative;
+      overflow: hidden;
+      padding: 3px;
+      display: flex;
+      align-items: center;
+      user-select: none;
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+
+    .slide-to-resume-track {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .slide-to-resume-text {
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(26, 28, 29, 0.6);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .slide-to-resume-text span {
+      font-size: 14px;
+      animation: chevron-shimmer 1.5s infinite;
+      color: var(--color-accent-violet);
+    }
+
+    .slide-to-resume-text span:nth-child(2) {
+      animation-delay: 0.25s;
+    }
+
+    @keyframes chevron-shimmer {
+      0% { opacity: 0.3; transform: translateX(-2px); }
+      50% { opacity: 1; transform: translateX(2px); }
+      100% { opacity: 0.3; transform: translateX(-2px); }
+    }
+
+    .slide-to-resume-handle {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: #1a1c1d;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: grab;
+      position: absolute;
+      left: 0;
+      top: 0;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      z-index: 10;
+      transition: background-color 0.25s ease, color 0.25s ease;
+    }
+
+    .slide-to-resume-handle:active {
+      cursor: grabbing;
+    }
+
+    .slide-to-resume-handle span {
+      font-size: 16px;
+      transition: color 0.25s ease;
+    }
+
+    .featured-right-vector {
+      width: 140px;
+      height: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      z-index: 1;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    /* Standardized Square Course Grid */
+    .library-section-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      width: 100%;
+    }
+
+    .library-section-title {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--color-on-background);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .library-section-count-badge {
+      font-size: 13px;
+      font-weight: 700;
+      color: #ffffff;
+      background: #1a1c1d;
+      border-radius: 9999px;
+      padding: 2px 10px;
+    }
+
+    .library-grid-squares {
+      display: flex;
+      gap: 16px;
+      width: 100%;
+      overflow-x: auto;
+      padding: 8px 4px 20px 4px; /* Room for card shadow */
+      scrollbar-width: none;
+    }
+
+    .library-grid-squares::-webkit-scrollbar {
+      display: none;
+    }    .square-course-card {
+      width: 195px;
+      height: 280px;
+      flex-shrink: 0;
+      border-radius: 2rem;
+      padding: 24px 18px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.02);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+
+    /* Distinct pastel gradient backdrops for squares - matching reference screenshot */
+    .square-card-theme-amber {
+      background: linear-gradient(135deg, #F9ECE4 0%, #ECD3C8 100%);
+      border-color: rgba(236, 211, 200, 0.4);
+    }
+    .square-card-theme-amber:hover {
+      box-shadow: 0 12px 28px rgba(236, 211, 200, 0.25);
+    }
+
+    .square-card-theme-blue {
+      background: linear-gradient(135deg, #E6F3FC 0%, #CCE3F6 100%);
+      border-color: rgba(204, 227, 246, 0.4);
+    }
+    .square-card-theme-blue:hover {
+      box-shadow: 0 12px 28px rgba(204, 227, 246, 0.25);
+    }
+
+    .square-card-theme-mint {
+      background: linear-gradient(135deg, #E6F5EC 0%, #CCEED7 100%);
+      border-color: rgba(204, 238, 215, 0.4);
+    }
+    .square-card-theme-mint:hover {
+      box-shadow: 0 12px 28px rgba(204, 238, 215, 0.25);
+    }
+
+    .square-card-theme-lavender {
+      background: linear-gradient(135deg, #FAF0FA 0%, #ECCDEC 100%);
+      border-color: rgba(236, 205, 236, 0.4);
+    }
+    .square-card-theme-lavender:hover {
+      box-shadow: 0 12px 28px rgba(236, 205, 236, 0.25);
+    }
+
+    .square-card-title {
+      font-family: var(--font-body);
+      font-weight: 700;
+      font-size: 15px;
+      color: #1a1c1d;
+      line-height: 1.3;
+      margin-bottom: 4px;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      min-height: 57px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Ambient Light Glassmorphism Effects (Drifting Liquid Blobs) -->
+  <div class="ambient-background">
+    <div class="liquid-blob blob-primary"></div>
+    <div class="liquid-blob blob-secondary"></div>
+    <div class="liquid-blob blob-tertiary"></div>
+  </div>
+
+  <div class="app-viewport-container">
+    
+    <!-- Top Bar Navigation (Exactly like screenshot) -->
+    <header class="app-header">
+      <button class="header-btn" id="menuBtn">
+        <span class="material-symbols-outlined">menu</span>
+      </button>
+      <a href="#" class="app-logo" id="appLogo">DEEPDIVE</a>
+      <button class="header-btn" id="profileBtn">
+        <span class="material-symbols-outlined">person</span>
+      </button>
+    </header>
+
+    <!-- Main Dynamic Screen Content Area -->
+    <main class="app-main">
+
+      <!-- ==========================================
+           SCREEN 1: DISCOVER / HOME
+           ========================================== -->
+      <section class="app-screen active" id="screenHome">
+        <div class="home-hero">
+          <h2>What would you like to master today?</h2>
+        </div>
+
+        <!-- Custom Search Container (Matching screenshot search capsule) -->
+        <div class="search-container glass-input" id="searchBoxContainer">
+          <span class="material-symbols-outlined search-icon">search</span>
+          <input type="text" class="search-input" id="searchInput" placeholder="What are you curious about?" autocomplete="off">
+          <button class="search-btn" id="searchBtn">
+            <span class="material-symbols-outlined">arrow_forward</span>
+          </button>
+        </div>
+
+        <!-- Suggestions Grid (Matching screen suggestions) -->
+        <div class="suggestions-grid">
+          <button class="chip-suggest" data-topic="Quantum Computing">
+            <span class="material-symbols-outlined">data_object</span> Quantum Computing
+          </button>
+          <button class="chip-suggest" data-topic="Neurology">
+            <span class="material-symbols-outlined">psychology</span> Neurology
+          </button>
+          <button class="chip-suggest" data-topic="Astrophysics">
+            <span class="material-symbols-outlined">rocket_launch</span> Astrophysics
+          </button>
+          <button class="chip-suggest" data-topic="Philosophy">
+            <span class="material-symbols-outlined">menu_book</span> Philosophy
+          </button>
+        </div>
+      </section>
+
+
+      <!-- ==========================================
+           SCREEN 2: GENERATION LOADING STAGE
+           ========================================== -->
+      <section class="app-screen" id="screenLoading">
+        <div class="loading-container glass-panel">
+          <div class="liquid-spinner-wrapper">
+            <div class="spinner-ring"></div>
+            <div class="spinner-ring-inner"></div>
+            <div class="spinner-core">
+              <span class="material-symbols-outlined">psychology</span>
+            </div>
+          </div>
+
+          <h3 class="loading-step-title" id="loadingTitle">Mapping Knowledge</h3>
+          <p class="loading-step-sub" id="loadingSub">Formulating learning nodes...</p>
+
+          <div class="shimmer-progress-track">
+            <div class="shimmer-progress-bar" id="shimmerBar"></div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ==========================================
+           SCREEN 3: COURSE WORKSPACE
+           ========================================== -->
+      <section class="app-screen" id="screenWorkspace">
+        
+        <div class="workspace-header">
+          <div class="back-btn-row">
+            <button class="back-btn" id="backToHomeBtn">
+              <span class="material-symbols-outlined">arrow_back</span> Back to Home
+            </button>
+          </div>
+          <div class="course-title-block">
+            <h3 id="workspaceCourseTitle">Quantum Computing Foundations</h3>
+            <div class="course-progress-block">
+              <div class="mini-progress-track">
+                <div class="mini-progress-bar" id="workspaceCourseProgress"></div>
+              </div>
+              <span class="progress-percent-label" id="workspaceCoursePercent">0%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Adaptive Desktop Layout: Sidebar + Main Workspace Panel -->
+        <div class="workspace-layout">
+          
+          <!-- Sidebar: Navigation of course modules -->
+          <aside class="workspace-sidebar glass-panel chapters-card">
+            <h4>Course Syllabus</h4>
+            <div class="chapter-list-items" id="syllabusChaptersList">
+              <!-- Rendered dynamically -->
+            </div>
+          </aside>
+
+          <!-- Core panel: Content view containing Video, Article, Quiz -->
+          <div class="workspace-pane">
+            <div class="glass-panel workspace-pane-card">
+              
+              <!-- Tab Navigators -->
+              <nav class="workspace-tabs">
+                <button class="workspace-tab active" data-tab="tabVideo">
+                  <span class="material-symbols-outlined">subscriptions</span>
+                  Video Lesson
+                </button>
+                <button class="workspace-tab" data-tab="tabArticle">
+                  <span class="material-symbols-outlined">menu_book</span>
+                  Reading Room
+                </button>
+                <button class="workspace-tab" data-tab="tabQuiz">
+                  <span class="material-symbols-outlined">quiz</span>
+                  AI Assessment
+                </button>
+              </nav>
+
+              <!-- Tab Contents -->
+              <div class="tab-pane">
+                
+                <!-- 1. VIDEO CONTENT -->
+                <div class="tab-content active" id="tabVideo">
+                  <div class="video-player-container">
+                    <div class="video-thumbnail-overlay" id="videoThumbnail">
+                      <button class="video-play-btn" id="videoPlayBtn">
+                        <span class="material-symbols-outlined">play_arrow</span>
+                      </button>
+                    </div>
+                    <div class="mock-video-interface" id="videoPlayerFrame">
+                      <!-- Responsive Youtube Embed -->
+                      <iframe class="mock-video-embed" id="videoIframe" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                    </div>
+                  </div>
+                  <div class="video-info-block">
+                    <h4 id="videoTitle">Understanding Quantum States</h4>
+                    <div class="video-meta">
+                      <div class="video-meta-item">
+                        <span class="material-symbols-outlined">schedule</span>
+                        <span id="videoDuration">12 Mins</span>
+                      </div>
+                      <div class="video-meta-item">
+                        <span class="material-symbols-outlined">youtube_activity</span>
+                        <span>YouTube Educational Archive</span>
+                      </div>
+                    </div>
+                    <div class="video-takeaways">
+                      <h5>Lesson Key Takeaways</h5>
+                      <ul class="video-takeaways-list" id="videoTakeaways">
+                        <!-- Loaded dynamically -->
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 2. ARTICLE READING -->
+                <div class="tab-content" id="tabArticle">
+                  <article class="article-container">
+                    <div class="article-header">
+                      <h4 id="articleTitle">The Mechanics of Superposition</h4>
+                    </div>
+                    <div class="article-body" id="articleBody">
+                      <!-- Loaded dynamically -->
+                    </div>
+                  </article>
+                </div>
+
+                <!-- 3. ASSESSMENT QUIZ -->
+                <div class="tab-content" id="tabQuiz">
+                  <div class="quiz-container" id="quizActiveView">
+                    <div class="quiz-question-block">
+                      <span class="quiz-num" id="quizQuestionNum">Question 1 of 3</span>
+                      <h4 class="quiz-text" id="quizQuestionText">What principle allows a quantum bit to exist in multiple states simultaneously?</h4>
+                    </div>
+                    <div class="quiz-options" id="quizOptionsContainer">
+                      <!-- Rendered dynamically -->
+                    </div>
+                    
+                    <div class="quiz-feedback-box" id="quizFeedbackBox">
+                      <h5 class="quiz-feedback-title" id="quizFeedbackTitle">
+                        <span class="material-symbols-outlined">check_circle</span> Correct Analysis
+                      </h5>
+                      <p class="quiz-explanation" id="quizExplanationText">
+                        Superposition is the core principle that describes this phenomenon...
+                      </p>
+                    </div>
+
+                    <div class="quiz-action-bar">
+                      <button class="btn-pebble btn-primary" id="quizNextBtn" disabled>Next Question</button>
+                    </div>
+                  </div>
+
+                  <!-- Quiz Finish View -->
+                  <div class="quiz-result-view" id="quizResultView">
+                    <div class="quiz-score-badge">
+                      <h5 id="quizScoreText">3/3</h5>
+                      <span>Score</span>
+                    </div>
+                    <h4 id="quizVerdict">Mastery Achieved!</h4>
+                    <p id="quizResultSummary">You've successfully analyzed the concepts in this module and can proceed to the next chapter.</p>
+                    <button class="btn-pebble btn-mint" id="quizFinishBtn">Proceed to Next Module</button>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+
+      <!-- ==========================================
+           SCREEN 4: MY LIBRARY
+           ========================================== -->
+      <section class="app-screen" id="screenLibrary">
+        
+        <!-- Profile Header row (matches screenshot) -->
+        <div class="library-profile-row">
+          <div class="library-profile-left">
+            <div class="library-profile-avatar">ML</div>
+            <div class="library-profile-info">
+              <span class="library-profile-greeting">Good Morning</span>
+              <h4 class="library-profile-name">Martin Lee</h4>
+            </div>
+          </div>
+          <button class="library-profile-bell">
+            <span class="material-symbols-outlined">notifications</span>
+          </button>
+        </div>
+
+        <!-- Search Bar and Filter options -->
+        <div class="library-search-row">
+          <div class="library-search-input-wrapper glass-input">
+            <span class="material-symbols-outlined">search</span>
+            <input type="text" class="library-search-input" placeholder="Search your course...">
+          </div>
+          <button class="library-search-filter-btn">
+            <span class="material-symbols-outlined">tune</span>
+          </button>
+        </div>
+
+        <!-- Scrollable Category Filters -->
+        <div class="library-categories-scroll">
+          <button class="category-pill active" data-category="all">All</button>
+          <button class="category-pill" data-category="science">Science</button>
+          <button class="category-pill" data-category="technology">Technology</button>
+          <button class="category-pill" data-category="philosophy">Philosophy</button>
+        </div>
+
+        <!-- Featured Last Studied Course (Rendered Dynamically via JS) -->
+        <div id="featuredCourseContainer">
+          <!-- Rendered dynamically -->
+        </div>
+
+        <!-- Popular Courses Grid Section -->
+        <div id="libraryCoursesSection" style="width: 100%;">
+          <div class="library-section-title-row">
+            <div class="library-section-title">
+              Popular courses <span class="library-section-count-badge" id="libraryCoursesCount">0</span>
+            </div>
+            <span style="font-size: 13px; font-weight: 700; color: var(--color-accent-violet); cursor: pointer;">See all</span>
+          </div>
+
+          <div class="library-grid-squares" id="libraryGrid">
+            <!-- Rendered dynamically as square cards -->
+          </div>
+        </div>
+
+        <!-- Empty State View -->
+        <div class="empty-library-view" id="emptyLibrary" style="display: none;">
+          <span class="material-symbols-outlined">local_library</span>
+          <h4>No Courses Active</h4>
+          <p>Explore a curiosity, generate a customized course, and start your journey!</p>
+          <button class="btn-pebble btn-primary" id="emptyLibraryExploreBtn" style="margin-top: 12px;">Explore Topics</button>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Dynamic Bottom Custom Nav Bar Capsule (Exactly like screenshot) -->
+    <div class="app-nav-bar-container">
+      <nav class="app-nav-bar">
+        <button class="nav-item active" data-screen="home">
+          <span class="material-symbols-outlined">home</span>
+          Home
+        </button>
+        <button class="nav-item" data-screen="library">
+          <span class="material-symbols-outlined">subscriptions</span>
+          Library
+        </button>
+      </nav>
+    </div>
+
+  </div>
+
+  <!-- ==========================================
+       CURRICULUM CUSTOMIZER DIALOG (Pop-up/Modal)
+       ========================================== -->
+  <div class="customizer-backdrop" id="customizerBackdrop"></div>
+  <div class="customizer-drawer glass-popover" id="customizerDrawer">
+    <div class="drawer-handle"></div>
+    <h3 class="drawer-title">Curate DeepDive</h3>
+    
+    <div class="customizer-group">
+      <span class="customizer-label">Syllabus Depth</span>
+      <div class="options-row">
+        <div class="option-pill active" data-depth="2">2 Chapters (Crash Course)</div>
+        <div class="option-pill" data-depth="4">4 Chapters (Comprehensive)</div>
+      </div>
+    </div>
+
+    <div class="customizer-group">
+      <span class="customizer-label">Curator Focus</span>
+      <div class="options-row">
+        <div class="option-pill active" data-focus="conceptual">Conceptual (Core Concepts)</div>
+        <div class="option-pill" data-focus="practical">Practical (Applied Lab)</div>
+      </div>
+    </div>
+
+    <div class="customizer-group" style="margin-bottom: 32px;">
+      <span class="customizer-label">Primary Media Medium</span>
+      <div class="options-row">
+        <div class="option-pill active" data-media="video">Video & Readings</div>
+        <div class="option-pill" data-media="academic">Academic Papers & Text</div>
+      </div>
+    </div>
+
+    <button class="btn-pebble btn-primary" id="startGenerationBtn" style="width: 100%; height: 50px; font-size: 16px;">
+      Generate Syllabus <span class="material-symbols-outlined">rocket_launch</span>
+    </button>
+  </div>
+
+
+  <!-- =========================================================================
+       JAVASCRIPT LOGIC & STATE ENGINE
+       ========================================================================= -->
+  <script>
+    /* -------------------------------------------------------------
+       A. CORE APPLICATION DATABASE (Pre-made Premium Courses)
+       ------------------------------------------------------------- */
+    const PREMADE_COURSES = {
+      "Quantum Computing": {
+        title: "Quantum Computing Foundations",
+        icon: "data_object",
+        chapters: [
+          {
+            index: "Chapter 1",
+            title: "Superposition & Quantum Mechanics",
+            video: {
+              title: "What is Superposition? Double Slit Experiment",
+              duration: "8 mins",
+              embedId: "Q1YqgPAtzho",
+              thumbnail: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&q=80&w=800",
+              takeaways: [
+                "In quantum systems, particles can exist in multiple states at once until observed.",
+                "Superposition is mathematically described as a linear combination of states.",
+                "Observation forces the wave function to collapse into a definite classic state."
+              ]
+            },
+            article: {
+              title: "The Physics of Superposition",
+              body: `
+                <p>To understand quantum superposition, we must first abandon the intuitive rules of our macroscopic world. In classical physics, a coin lies either heads up or tails up. In quantum mechanics, however, an unobserved particle exists in a blur of probabilities—a state known as <span class="glossary-term" title="A state of existence where a particle is in all potential configurations simultaneously.">superposition</span>.</p>
+                <div class="article-highlight-box">
+                  <h5>Core Theoretical Concept</h5>
+                  <p>A quantum bit (qubit) does not choose a state of 0 or 1 until it interacts with an external measuring apparatus. It is the act of measurement itself that collapses the wave function, forcing the system to declare a classical outcome.</p>
+                </div>
+                <p>This quantum behavior was famously demonstrated by the double-slit experiment, where single electrons fired at two parallel slits created an interference pattern on a screen, proving that individual particles travel as waves of probability passing through both slits simultaneously. Only when a detector is placed at the slits does the interference pattern disappear, collapsing back into two simple classical stripes.</p>
+              `
+            },
+            quiz: [
+              {
+                question: "What does the 'collapse' of a quantum state mean?",
+                options: [
+                  { text: "The state explodes due to density", correct: false },
+                  { text: "A qubit transitions from superposition to a definite 0 or 1 upon observation", correct: true },
+                  { text: "The quantum computer runs out of thermodynamic power", correct: false }
+                ],
+                explanation: "Observation forces a quantum system to choose a single classical coordinate, collapsing its probability wave function into a certain state."
+              },
+              {
+                question: "Which physical experiment proved that single particles travel as probability waves?",
+                options: [
+                  { text: "Michelson-Morley interferometer", correct: false },
+                  { text: "The Double-Slit experiment", correct: true },
+                  { text: "Rutherford gold foil scattering", correct: false }
+                ],
+                explanation: "The double-slit experiment showed that even single particles pass through both slits, creating an interference pattern characteristic of waves."
+              }
+            ]
+          },
+          {
+            index: "Chapter 2",
+            title: "Quantum Entanglement & Einstein's Paradox",
+            video: {
+              title: "Entanglement Explained: Spooky Action at a Distance",
+              duration: "11 mins",
+              embedId: "ZuvK-ldF11g",
+              thumbnail: "https://images.unsplash.com/photo-1507668077129-56e32842fceb?auto=format&fit=crop&q=80&w=800",
+              takeaways: [
+                "Entanglement links two particles such that the state of one instantly dictates the state of the other.",
+                "Einstein famously dubbed this correlation 'spooky action at a distance'.",
+                "Bell's Theorem mathematically proved that this quantum link violates local classical realism."
+              ]
+            },
+            article: {
+              title: "Entanglement and the Bell's Theorem",
+              body: `
+                <p>Entanglement is perhaps the most poetically baffling feature of quantum physics. When two particles are generated in an entangled state, their physical properties become deeply intertwined. Regardless of whether they are separated by millimeters or light-years, measuring one particle instantly reveals the corresponding state of the other.</p>
+                <div class="article-highlight-box">
+                  <h5>EPR Paradox</h5>
+                  <p>Albert Einstein, along with Boris Podolsky and Nathan Rosen, proposed that if quantum entanglement was correct, information would have to travel faster than light, violating relativity. They argued that quantum mechanics must be incomplete, possessing 'hidden variables' that predetermine the measurements.</p>
+                </div>
+                <p>However, in 1964, physicist John Stewart Bell proposed a mathematical inequality that could prove if hidden variables existed. Countless modern experiments have confirmed Bell's inequality is violated, proving that the universe is fundamentally non-local: the entangled particles do not contain hidden variables, but are connected in a spatial relationship that transcends classical causality.</p>
+              `
+            },
+            quiz: [
+              {
+                question: "What did John Bell's theorem mathematically disprove?",
+                options: [
+                  { text: "The speed of light constant", correct: false },
+                  { text: "Local hidden variables in quantum mechanics", correct: true },
+                  { text: "The existence of gravitational waves", correct: false }
+                ],
+                explanation: "Bell proved that no physical theory of local hidden variables can reproduce all of the predictions of quantum mechanics, validating non-local entanglement."
+              }
+            ]
+          }
+        ]
+      },
+      "Mobile App Development": {
+        title: "Mobile App Development with React Native",
+        icon: "smartphone",
+        chapters: [
+          {
+            index: "Chapter 1",
+            title: "React Native Core Components & Layouts",
+            video: {
+              title: "React Native in 100 Seconds: Fundamentals",
+              duration: "6 mins",
+              embedId: "gvkqT_qiZiM",
+              thumbnail: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=800",
+              takeaways: [
+                "React Native bridges JavaScript code with native platform components (iOS & Android).",
+                "Core building blocks like <View>, <Text>, and <Image> map to native platform controls.",
+                "Layouts are managed using Yoga Flexbox engine, optimized for responsive mobile designs."
+              ]
+            },
+            article: {
+              title: "Cross-Platform Layout Architectures",
+              body: `
+                <p>Developing for mobile requires a mental shift from traditional web viewports. React Native relies on a subset of CSS styled attributes powered by the Yoga layout engine—a cross-platform C implementation of Flexbox.</p>
+                <div class="article-highlight-box">
+                  <h5>Core Layout Constraint</h5>
+                  <p>Unlike the browser, all Flexbox layouts in React Native default to a vertical flex direction (<code>flexDirection: 'column'</code>). Width and height bounds are calculated as unitless density-independent pixels.</p>
+                </div>
+                <p>By standardizing on a single layout engine, developers can specify interfaces once and compile them down to highly optimized native views, bypassing webview wrappers entirely and rendering at a consistent 60 frames per second.</p>
+              `
+            },
+            quiz: [
+              {
+                question: "What is the default flexDirection in React Native?",
+                options: [
+                  { text: "row", correct: false },
+                  { text: "column", correct: true },
+                  { text: "grid", correct: false }
+                ],
+                explanation: "React Native defaults to a vertical layout (column) to naturally suit vertical portrait mobile viewports."
+              }
+            ]
+          }
+        ]
+      },
+      "Financial Management": {
+        title: "Introduction to Financial Management",
+        icon: "payments",
+        chapters: [
+          {
+            index: "Chapter 1",
+            title: "Principles of Capital Allocation",
+            video: {
+              title: "What is Capital Allocation? Corporate Finance Basics",
+              duration: "9 mins",
+              embedId: "dQw4w9WgXcQ",
+              thumbnail: "https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?auto=format&fit=crop&q=80&w=800",
+              takeaways: [
+                "Capital allocation is the process of deciding how to distribute financial resources to maximize value.",
+                "Firms choose between capital expenditures (CapEx), research, dividends, or share buybacks.",
+                "The hurdle rate represents the minimum acceptable rate of return for any investment project."
+              ]
+            },
+            article: {
+              title: "Strategic Asset Allocation Frameworks",
+              body: `
+                <p>The primary mandate of corporate leadership is the creation of shareholder value through the strategic allocation of capital. Every dollar generated by a firm must be evaluated against its opportunity cost—either returned to investors or reinvested in high-return endeavors.</p>
+                <div class="article-highlight-box">
+                  <h5>Hurdle Rate Constraint</h5>
+                  <p>When selecting investment projects, a firm calculates its Weighted Average Cost of Capital (WACC). Any prospective project must yield a return exceeding this hurdle rate to be considered value-additive.</p>
+                </div>
+                <p>By applying robust discounted cash flow (DCF) models, corporate managers estimate the Net Present Value (NPV) of future cash inflows, ensuring that capital flows to projects with the highest absolute returns relative to risk.</p>
+              `
+            },
+            quiz: [
+              {
+                question: "What represents the minimum acceptable rate of return for corporate projects?",
+                options: [
+                  { text: "The inflation index rate", correct: false },
+                  { text: "The hurdle rate (or WACC)", correct: true },
+                  { text: "The treasury bond yield", correct: false }
+                ],
+                explanation: "The hurdle rate is the minimum return a project must yield to cover the cost of capital and avoid destroying shareholder value."
+              }
+            ]
+          }
+        ]
+      },
+      "Neurology": {
+        title: "Introduction to Cognitive Neurology",
+        icon: "psychology",
+        chapters: [
+          {
+            index: "Chapter 1",
+            title: "Neuron Anatomy & Action Potentials",
+            video: {
+              title: "How Neurons Fire: Action Potential Walkthrough",
+              duration: "9 mins",
+              embedId: "FEHNIpP66b0",
+              thumbnail: "https://images.unsplash.com/photo-1559757175-5700dde675bc?auto=format&fit=crop&q=80&w=800",
+              takeaways: [
+                "Neurons convey messages using rapid electro-chemical impulses called action potentials.",
+                "The resting membrane potential sits at roughly -70mV, maintained by sodium-potassium pumps.",
+                "Depolarization occurs when voltage-gated sodium channels open, letting ions rush in."
+              ]
+            },
+            article: {
+              title: "The Biophysics of Synaptic Firing",
+              body: `
+                <p>Your brain is an intricate electrical network comprised of over 86 billion specialized cells called neurons. Each neuron acts as a micro-processor, receiving inputs through its tree-like dendrites, summing those signals in the cell body, and firing a response down its long, cylindrical axon.</p>
+                <div class="article-highlight-box">
+                  <h5>The Resting State</h5>
+                  <p>When a neuron is idle, it maintains a polar electrical charge of -70 millivolts inside relative to the outside. This is held in place by specialized channels that pump 3 positive Sodium ions out for every 2 Potassium ions they pull in.</p>
+                </div>
+                <p>If an input pushes the cell's charge past a critical threshold (typically -55mV), voltage-dependent sodium gates swing open, letting positive ions flood in. This flip of polarity propagates down the axon like a falling row of dominoes—this is the Action Potential, the basic spark of biological thought.</p>
+              `
+            },
+            quiz: [
+              {
+                question: "What is the threshold voltage required to trigger an action potential?",
+                options: [
+                  { text: "-70 mV", correct: false },
+                  { text: "-55 mV", correct: true },
+                  { text: "+30 mV", correct: false }
+                ],
+                explanation: "-55mV is the threshold potential that triggers the rapid opening of voltage-gated sodium channels."
+              }
+            ]
+          }
+        ]
+      }
+    };
+
+    /* -------------------------------------------------------------
+       B. APPLICATION GLOBAL STATE
+       ------------------------------------------------------------- */
+    const state = {
+      currentScreen: 'home',
+      searchQuery: '',
+      customizer: {
+        depth: 2,
+        focus: 'conceptual',
+        media: 'video'
+      },
+      activeCourse: null,
+      activeChapterIndex: 0,
+      activeQuizIndex: 0,
+      quizAnswersSelected: [], // Track choices
+      library: [],
+      isScrollingLibraryGrid: false // Track scrolling to suppress clicks
+    };
+
+    // Load state from LocalStorage if available
+    function loadSavedLibrary() {
+      try {
+        const saved = localStorage.getItem('deepdive_library_v4');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            state.library = parsed;
+            return;
+          }
+        }
+      } catch (e) {
+        console.error("Error loading library, resetting to defaults", e);
+      }
+
+      // Hydrate with premium set matching screenshot
+      state.library = [
+        {
+          id: 'quantum-computing-foundations',
+          query: 'Quantum Computing',
+          title: PREMADE_COURSES['Quantum Computing'].title,
+          icon: PREMADE_COURSES['Quantum Computing'].icon,
+          chaptersCount: 2,
+          progress: 50,
+          completedChapters: [0],
+          data: PREMADE_COURSES['Quantum Computing']
+        },
+        {
+          id: 'mobile-app-development-with-react-native',
+          query: 'Mobile App Development',
+          title: PREMADE_COURSES['Mobile App Development'].title,
+          icon: PREMADE_COURSES['Mobile App Development'].icon,
+          chaptersCount: 1,
+          progress: 0,
+          completedChapters: [],
+          data: PREMADE_COURSES['Mobile App Development']
+        },
+        {
+          id: 'introduction-to-financial-management',
+          query: 'Financial Management',
+          title: PREMADE_COURSES['Financial Management'].title,
+          icon: PREMADE_COURSES['Financial Management'].icon,
+          chaptersCount: 1,
+          progress: 0,
+          completedChapters: [],
+          data: PREMADE_COURSES['Financial Management']
+        },
+        {
+          id: 'introduction-to-cognitive-neurology',
+          query: 'Neurology',
+          title: PREMADE_COURSES['Neurology'].title,
+          icon: PREMADE_COURSES['Neurology'].icon,
+          chaptersCount: 1,
+          progress: 0,
+          completedChapters: [],
+          data: PREMADE_COURSES['Neurology']
+        }
+      ];
+      saveLibrary();
+    }
+
+    function saveLibrary() {
+      localStorage.setItem('deepdive_library_v4', JSON.stringify(state.library));
+    }
+
+    /* -------------------------------------------------------------
+       C. CONTEXTUAL DYNAMIC SYLLABUS GENERATOR (FALLBACK AI)
+       ------------------------------------------------------------- */
+    function generateCourseDataOnDemand(topicName) {
+      // Clean query name
+      const cleanTopic = topicName.trim();
+      const slug = cleanTopic.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      
+      // Check if we have pre-made
+      const key = Object.keys(PREMADE_COURSES).find(k => k.toLowerCase() === cleanTopic.toLowerCase());
+      if (key) {
+        return {
+          id: slug,
+          query: cleanTopic,
+          title: PREMADE_COURSES[key].title,
+          icon: PREMADE_COURSES[key].icon,
+          chaptersCount: state.customizer.depth,
+          progress: 0,
+          completedChapters: [],
+          data: PREMADE_COURSES[key]
+        };
+      }
+
+      // Dynamic synthesis simulation!
+      const iconMap = {
+        code: "data_object", tech: "laptop_mac", science: "science", art: "palette",
+        history: "history", finance: "payments", design: "draw", business: "business_center"
+      };
+      
+      let matchedIcon = "school"; // default
+      for (const [kw, icon] of Object.entries(iconMap)) {
+        if (cleanTopic.toLowerCase().includes(kw)) {
+          matchedIcon = icon;
+          break;
+        }
+      }
+
+      const generatedData = {
+        title: `${cleanTopic} Accelerator`,
+        icon: matchedIcon,
+        chapters: []
+      };
+
+      const syllabusOutline = [
+        {
+          index: "Chapter 1",
+          title: `Foundations of ${cleanTopic}`,
+          vTitle: `Introduction to ${cleanTopic}: Basic Mechanics`,
+          takeaways: [
+            `Analyze the historical paradigms and core terminology of ${cleanTopic}.`,
+            `Identify the fundamental building blocks and basic architecture.`,
+            `Understand simple operational models and immediate application domains.`
+          ],
+          terms: ["Paradigms", "Methodology", "Key Coordinates"],
+          body: `
+            <p>Welcome to your customized syllabus on ${cleanTopic}. Every complex discipline rests on a series of basic constraints. When initiating a study into ${cleanTopic}, we must establish our lexicon and fundamental parameters.</p>
+            <div class="article-highlight-box">
+              <h5>Essential Premise</h5>
+              <p>Learning is non-linear. In mastering ${cleanTopic}, you must focus on the core modules of operations before trying to digest high-level algorithmic combinations.</p>
+            </div>
+            <p>During the early history of this field, practitioners relied on analog frameworks. Modern advancements, however, have unlocked digital, modular workflows that dramatically lower the barrier of entry, making it vital to study the mechanics from first principles.</p>
+          `,
+          qText: `What is considered the most critical starting step when curating a workflow in ${cleanTopic}?`,
+          options: [
+            { text: "Establishing standard terminology & fundamental bounds", correct: true },
+            { text: "Purchasing expensive high-end software components", correct: false },
+            { text: "Ignoring basic paradigms and moving straight to advanced scales", correct: false }
+          ],
+          exp: "First principles dictate that aligning terminology and standard constraints is key to long-term engineering and learning outcomes."
+        },
+        {
+          index: "Chapter 2",
+          title: `Core Methodologies & Systems`,
+          vTitle: `Deep Dive: Advanced Frameworks of ${cleanTopic}`,
+          takeaways: [
+            `Evaluate active methodologies and industrial standards in the field.`,
+            `Differentiate between conceptual models and practical deployments.`,
+            `Optimize systems for maximum efficiency and architectural scalability.`
+          ],
+          terms: ["Optimization", "Scalability", "Functional Modules"],
+          body: `
+            <p>Having established the basic vocabulary, we can now look at the active structures of ${cleanTopic}. This chapter explores how theoretical constructs manifest in practical, real-world systems.</p>
+            <div class="article-highlight-box">
+              <h5>Scalability Constraint</h5>
+              <p>Any solution constructed without considering throughput and system friction will inevitably fail at load. Structuring modular, independent components is a key modern paradigm.</p>
+            </div>
+            <p>Through careful analytical modeling, researchers have identified that key bottlenecks in ${cleanTopic} do not arise from CPU bottlenecks, but from conceptual misalignment in system configuration. Optimizing this layer provides massive scalability wins.</p>
+          `,
+          qText: "Why is structural modularity highly prioritized by advanced practitioners?",
+          options: [
+            { text: "It isolates faults and ensures system scalability", correct: true },
+            { text: "It reduces the absolute count of styling files", correct: false },
+            { text: "It forces the system to run on linear threads", correct: false }
+          ],
+          exp: "Modular architecture is fundamental to scaling systems, allowing updates to discrete layers without threatening the stability of the entire system."
+        }
+      ];
+
+      // Build out 4 chapters if comprehensive is chosen
+      if (state.customizer.depth === 4) {
+        syllabusOutline.push(
+          {
+            index: "Chapter 3",
+            title: `Advanced Integrations & Synthesis`,
+            vTitle: `${cleanTopic} Masterclass: Modular Integration`,
+            takeaways: [
+              `Synthesize multiple distinct modules into a singular functioning construct.`,
+              `Troubleshoot and isolate integration anomalies.`,
+              `Implement best-in-class security and operational protocols.`
+            ],
+            terms: ["Synthesis", "Anomalies", "Protocol"],
+            body: `
+              <p>As we transition into high-fidelity operations, the focus moves from individual component performance to full integration synthesis. Connecting discrete nodes of ${cleanTopic} introduces secondary complexities.</p>
+              <div class="article-highlight-box">
+                <h5>Integration Friction</h5>
+                <p>The boundary layers where separate components interact are the most fragile areas in any structural design. Aligning data paradigms at these intersections is crucial.</p>
+              </div>
+              <p>In this chapter, we outline a step-by-step framework for diagnosing boundary failures, detailing tools that provide developers and designers with precise feedback grids.</p>
+            `,
+            qText: "Which layer is mathematically most prone to failure in complex integrated networks?",
+            options: [
+              { text: "The isolated core modules", correct: false },
+              { text: "The boundary interfaces between distinct systems", correct: true },
+              { text: "The secondary backup battery systems", correct: false }
+            ],
+            exp: "Boundary interfaces represent boundary friction points where data formats, timing differences, and mismatch in assumptions can lead to structural failures."
+          },
+          {
+            index: "Chapter 4",
+            title: "Future Horizons & Case Studies",
+            vTitle: `Future Developments & Emerging Paradigms in ${cleanTopic}`,
+            takeaways: [
+              `Forecast future architectural disruptions in the coming decade.`,
+              `Analyze real-world high-profile case studies of success and failure.`,
+              `Formulate your own self-sustained project roadmap.`
+            ],
+            terms: ["Paradigm Shift", "Disruption", "Fidelity"],
+            body: `
+              <p>In this final module, we zoom out to evaluate the wider industry landscape of ${cleanTopic}. Understanding where this technology is heading allows us to construct resilient solutions today.</p>
+              <div class="article-highlight-box">
+                <h5>The Next Frontier</h5>
+                <p>The emergence of cloud-native and decentralized models is causing a massive paradigm shift, completely transforming how teams distribute tasks and compile assets.</p>
+              </div>
+              <p>By studying classical operational breakdowns—such as the massive 2024 architecture crash—we learn that simplicity in design is not just a stylistic choice, but a critical safety measure.</p>
+            `,
+            qText: "What key lesson does operational history teach regarding system architecture?",
+            options: [
+              { text: "Maximum complexity is always required for success", correct: false },
+              { text: "Simplicity is a foundational security and safety asset", correct: true },
+              { text: "Decentralized states always process faster than centralized ones", correct: false }
+            ],
+            exp: "Simplicity reduces the surface area of potential failures, making systems dramatically easier to audit, secure, and debug over time."
+          }
+        );
+      }
+
+      // Convert outline into course database
+      generatedData.chapters = syllabusOutline.map(item => ({
+        index: item.index,
+        title: item.title,
+        video: {
+          title: item.vTitle,
+          duration: "10 mins",
+          embedId: "dQw4w9WgXcQ", // Standard placeholder video
+          thumbnail: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=800",
+          takeaways: item.takeaways
+        },
+        article: {
+          title: item.title,
+          body: item.body
+        },
+        quiz: [
+          {
+            question: item.qText,
+            options: item.options,
+            explanation: item.exp
+          }
+        ]
+      }));
+
+      return {
+        id: slug,
+        query: cleanTopic,
+        title: generatedData.title,
+        icon: generatedData.icon,
+        chaptersCount: state.customizer.depth,
+        progress: 0,
+        completedChapters: [],
+        data: generatedData
+      };
+    }
+
+    /* -------------------------------------------------------------
+       D. SCREEN TRANSITIONS ENGINE (SPA ROUTING)
+       ------------------------------------------------------------- */
+    const screens = {
+      home: document.getElementById('screenHome'),
+      loading: document.getElementById('screenLoading'),
+      workspace: document.getElementById('screenWorkspace'),
+      library: document.getElementById('screenLibrary')
+    };
+
+    function showScreen(screenKey) {
+      state.currentScreen = screenKey;
+      
+      // Update screens in DOM
+      Object.keys(screens).forEach(key => {
+        if (key === screenKey) {
+          screens[key].classList.add('active');
+        } else {
+          screens[key].classList.remove('active');
+        }
+      });
+
+      // Update Nav Bar Active UI state
+      document.querySelectorAll('.nav-item').forEach(item => {
+        if (item.getAttribute('data-screen') === screenKey) {
+          item.classList.add('active');
+        } else {
+          item.classList.remove('active');
+        }
+      });
+
+      // Special initializations on screen load
+      if (screenKey === 'library') {
+        renderLibrary();
+      }
+      
+      // Scroll to top
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    /* -------------------------------------------------------------
+       E. INTERACTION MECHANICS & EVENT LISTENERS
+       ------------------------------------------------------------- */
+
+    // 1. Bottom Nav Navigation
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const targetScreen = item.getAttribute('data-screen');
+        if (targetScreen) showScreen(targetScreen);
+      });
+    });
+
+    // App Logo click transitions to Home Screen
+    const logoEl = document.getElementById('appLogo');
+    if (logoEl) {
+      logoEl.addEventListener('click', (e) => {
+        e.preventDefault();
+        showScreen('home');
+      });
+    }
+
+    // 2. Home Topic suggestions click
+    document.querySelectorAll('.chip-suggest').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const topic = chip.getAttribute('data-topic');
+        document.getElementById('searchInput').value = topic;
+        triggerSyllabusCustomizer(topic);
+      });
+    });
+
+    // 3. Search triggers (Direct generation bypasses customizer)
+    document.getElementById('searchBtn').addEventListener('click', () => {
+      const value = document.getElementById('searchInput').value;
+      if (value.trim()) {
+        state.searchQuery = value;
+        startAIGenerationSequence();
+      }
+    });
+
+    document.getElementById('searchInput').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        const value = e.target.value;
+        if (value.trim()) {
+          state.searchQuery = value;
+          startAIGenerationSequence();
+        }
+      }
+    });
+
+    // 4. Customizer Modal Triggers
+    const backdrop = document.getElementById('customizerBackdrop');
+    const drawer = document.getElementById('customizerDrawer');
+
+    function triggerSyllabusCustomizer(query) {
+      state.searchQuery = query;
+      backdrop.classList.add('active');
+      drawer.classList.add('active');
+    }
+
+    function closeCustomizer() {
+      backdrop.classList.remove('active');
+      drawer.classList.remove('active');
+    }
+
+    backdrop.addEventListener('click', closeCustomizer);
+
+    // Toggle customizer option pills
+    document.querySelectorAll('.option-pill').forEach(pill => {
+      pill.addEventListener('click', (e) => {
+        const parent = pill.parentElement;
+        parent.querySelectorAll('.option-pill').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+
+        // Update state
+        if (pill.getAttribute('data-depth')) {
+          state.customizer.depth = parseInt(pill.getAttribute('data-depth'));
+        } else if (pill.getAttribute('data-focus')) {
+          state.customizer.focus = pill.getAttribute('data-focus');
+        } else if (pill.getAttribute('data-media')) {
+          state.customizer.media = pill.getAttribute('data-media');
+        }
+      });
+    });
+
+    // Start Generation Event
+    document.getElementById('startGenerationBtn').addEventListener('click', () => {
+      closeCustomizer();
+      startAIGenerationSequence();
+    });
+
+    /* -------------------------------------------------------------
+       F. AI GENERATION LOADING ROUTINE
+       ------------------------------------------------------------- */
+    function startAIGenerationSequence() {
+      showScreen('loading');
+      
+      const steps = [
+        { title: "Synthesizing Curriculum", sub: "Mapping core educational nodes...", duration: 1500 },
+        { title: "Harvesting Online Resources", sub: "Curating matching educational videos...", duration: 1500 },
+        { title: "Structuring Reading Room", sub: "Compiling research article sheets...", duration: 1500 },
+        { title: "Assembling AI Assessments", sub: "Structuring multiple-choice modules...", duration: 1500 }
+      ];
+
+      const bar = document.getElementById('shimmerBar');
+      const titleEl = document.getElementById('loadingTitle');
+      const subEl = document.getElementById('loadingSub');
+
+      let currentStep = 0;
+      bar.style.width = "0%";
+
+      function runStep() {
+        if (currentStep < steps.length) {
+          const step = steps[currentStep];
+          titleEl.textContent = step.title;
+          subEl.textContent = step.sub;
+
+          const basePercent = (currentStep / steps.length) * 100;
+          const nextPercent = ((currentStep + 1) / steps.length) * 100;
+
+          // Animate progress smoothly
+          let start = null;
+          function animateProgress(timestamp) {
+            if (!start) start = timestamp;
+            const elapsed = timestamp - start;
+            const progressRatio = Math.min(elapsed / step.duration, 1);
+            const currentPercent = basePercent + (progressRatio * (nextPercent - basePercent));
+            bar.style.width = `${currentPercent}%`;
+
+            if (progressRatio < 1) {
+              requestAnimationFrame(animateProgress);
+            } else {
+              currentStep++;
+              setTimeout(runStep, 100);
+            }
+          }
+          requestAnimationFrame(animateProgress);
+        } else {
+          // Completed! Create or load course, save to library, and route to Workspace
+          const course = generateCourseDataOnDemand(state.searchQuery);
+          
+          // Add to active library list if not exists
+          const existing = state.library.find(c => c.id === course.id);
+          if (!existing) {
+            state.library.unshift(course);
+            saveLibrary();
+          }
+
+          loadCourseIntoWorkspace(course.id);
+        }
+      }
+
+      runStep();
+    }
+
+    /* -------------------------------------------------------------
+       G. COURSE WORKSPACE DYNAMICS
+       ------------------------------------------------------------- */
+    function loadCourseIntoWorkspace(courseId) {
+      const course = state.library.find(c => c.id === courseId);
+      if (!course) return;
+
+      state.activeCourse = course;
+      state.activeChapterIndex = 0;
+      
+      // Update UI headings
+      document.getElementById('workspaceCourseTitle').textContent = course.title;
+      updateCourseProgressUI();
+
+      // Render curriculum sidebar
+      renderSyllabusSidebar();
+
+      // Load first chapter
+      loadChapter(0);
+
+      // Route
+      showScreen('workspace');
+    }
+
+    function updateCourseProgressUI() {
+      if (!state.activeCourse) return;
+      const percent = state.activeCourse.progress;
+      document.getElementById('workspaceCourseProgress').style.width = `${percent}%`;
+      document.getElementById('workspaceCoursePercent').textContent = `${percent}%`;
+    }
+
+    function renderSyllabusSidebar() {
+      const listContainer = document.getElementById('syllabusChaptersList');
+      listContainer.innerHTML = '';
+
+      state.activeCourse.data.chapters.forEach((chapter, index) => {
+        const isCompleted = state.activeCourse.completedChapters.includes(index);
+        const isActive = index === state.activeChapterIndex;
+
+        const item = document.createElement('div');
+        item.className = `chapter-item ${isCompleted ? 'completed' : ''} ${isActive ? 'active' : ''}`;
+        item.innerHTML = `
+          <div class="chapter-status-dot">
+            <span class="material-symbols-outlined">check</span>
+          </div>
+          <div class="chapter-item-details">
+            <span class="chapter-index">${chapter.index}</span>
+            <div class="chapter-name">${chapter.title}</div>
+          </div>
+        `;
+
+        item.addEventListener('click', () => {
+          document.querySelectorAll('.chapter-item').forEach(c => c.classList.remove('active'));
+          item.classList.add('active');
+          loadChapter(index);
+        });
+
+        listContainer.appendChild(item);
+      });
+    }
+
+    // Load active chapter details into Tabs
+    function loadChapter(chapterIndex) {
+      state.activeChapterIndex = chapterIndex;
+      const chapter = state.activeCourse.data.chapters[chapterIndex];
+      if (!chapter) return;
+
+      // 1. Video Tab Load
+      document.getElementById('videoTitle').textContent = chapter.video.title;
+      document.getElementById('videoDuration').textContent = chapter.video.duration;
+      document.getElementById('videoThumbnail').style.backgroundImage = `linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.5)), url('${chapter.video.thumbnail}')`;
+      
+      // Video embeds state resets
+      document.getElementById('videoThumbnail').style.display = 'flex';
+      document.getElementById('videoPlayerFrame').style.display = 'none';
+      document.getElementById('videoIframe').src = '';
+
+      // Video takeaways render
+      const takeawaysList = document.getElementById('videoTakeaways');
+      takeawaysList.innerHTML = '';
+      chapter.video.takeaways.forEach(tk => {
+        const li = document.createElement('li');
+        li.textContent = tk;
+        takeawaysList.appendChild(li);
+      });
+
+      // 2. Reading Tab Load
+      document.getElementById('articleTitle').textContent = chapter.article.title;
+      document.getElementById('articleBody').innerHTML = chapter.article.body;
+
+      // Enable tooltip hover trigger for glossary terms
+      document.querySelectorAll('.glossary-term').forEach(term => {
+        term.addEventListener('click', () => {
+          alert(`${term.textContent}: ${term.getAttribute('title')}`);
+        });
+      });
+
+      // 3. Quiz Tab Load
+      loadQuizForChapter(chapterIndex);
+
+      // Default back to Video Tab when clicking a new chapter
+      activateWorkspaceTab('tabVideo');
+    }
+
+    // Toggle Workspace Tabs (Video, Readings, Quiz)
+    function activateWorkspaceTab(tabId) {
+      document.querySelectorAll('.workspace-tab').forEach(btn => {
+        if (btn.getAttribute('data-tab') === tabId) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+
+      document.querySelectorAll('.tab-content').forEach(content => {
+        if (content.id === tabId) {
+          content.classList.add('active');
+        } else {
+          content.classList.remove('active');
+        }
+      });
+    }
+
+    document.querySelectorAll('.workspace-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        activateWorkspaceTab(btn.getAttribute('data-tab'));
+      });
+    });
+
+    // Custom Mock Video Play Activation
+    document.getElementById('videoPlayBtn').addEventListener('click', () => {
+      const chapter = state.activeCourse.data.chapters[state.activeChapterIndex];
+      document.getElementById('videoThumbnail').style.display = 'none';
+      document.getElementById('videoPlayerFrame').style.display = 'block';
+      document.getElementById('videoIframe').src = `https://www.youtube.com/embed/${chapter.video.embedId}?autoplay=1`;
+    });
+
+    /* -------------------------------------------------------------
+       H. INTERACTIVE ASSESSMENT HUB (QUIZ DYNAMICS)
+       ------------------------------------------------------------- */
+    function loadQuizForChapter(chapterIndex) {
+      state.activeQuizIndex = 0;
+      state.quizAnswersSelected = [];
+      
+      const chapter = state.activeCourse.data.chapters[chapterIndex];
+      const quizActiveView = document.getElementById('quizActiveView');
+      const quizResultView = document.getElementById('quizResultView');
+
+      quizActiveView.style.display = 'flex';
+      quizResultView.style.display = 'none';
+
+      renderQuizQuestion();
+    }
+
+    function renderQuizQuestion() {
+      const chapter = state.activeCourse.data.chapters[state.activeChapterIndex];
+      const quiz = chapter.quiz[state.activeQuizIndex];
+      if (!quiz) return;
+
+      document.getElementById('quizQuestionNum').textContent = `Question ${state.activeQuizIndex + 1} of ${chapter.quiz.length}`;
+      document.getElementById('quizQuestionText').textContent = quiz.question;
+
+      const optionsContainer = document.getElementById('quizOptionsContainer');
+      optionsContainer.innerHTML = '';
+
+      // Reset feedback box
+      const fbBox = document.getElementById('quizFeedbackBox');
+      fbBox.className = 'quiz-feedback-box';
+      fbBox.style.display = 'none';
+
+      // Next button disabled
+      const nextBtn = document.getElementById('quizNextBtn');
+      nextBtn.disabled = true;
+      nextBtn.textContent = (state.activeQuizIndex === chapter.quiz.length - 1) ? "Evaluate Quiz" : "Next Question";
+
+      quiz.options.forEach((opt, idx) => {
+        const optionEl = document.createElement('div');
+        optionEl.className = 'quiz-option';
+        optionEl.innerHTML = `
+          <div class="quiz-option-marker">${String.fromCharCode(65 + idx)}</div>
+          <span>${opt.text}</span>
+        `;
+
+        optionEl.addEventListener('click', () => {
+          if (nextBtn.disabled === false) return; // Answer already lock-evaluated
+
+          // Lock in answer choice
+          nextBtn.disabled = false;
+
+          if (opt.correct) {
+            optionEl.classList.add('correct');
+            fbBox.className = 'quiz-feedback-box correct';
+            document.getElementById('quizFeedbackTitle').innerHTML = `<span class="material-symbols-outlined">check_circle</span> Correct Analysis`;
+            state.quizAnswersSelected.push(true);
+          } else {
+            optionEl.classList.add('wrong');
+            fbBox.className = 'quiz-feedback-box wrong';
+            document.getElementById('quizFeedbackTitle').innerHTML = `<span class="material-symbols-outlined">cancel</span> Incorrect Insight`;
+            
+            // Highlight correct one as well
+            const correctIdx = quiz.options.findIndex(o => o.correct);
+            setTimeout(() => {
+              optionsContainer.children[correctIdx].classList.add('correct');
+            }, 300);
+
+            state.quizAnswersSelected.push(false);
+          }
+
+          document.getElementById('quizExplanationText').textContent = quiz.explanation;
+          fbBox.style.display = 'block';
+        });
+
+        optionsContainer.appendChild(optionEl);
+      });
+    }
+
+    // Quiz action buttons
+    document.getElementById('quizNextBtn').addEventListener('click', () => {
+      const chapter = state.activeCourse.data.chapters[state.activeChapterIndex];
+      
+      if (state.activeQuizIndex < chapter.quiz.length - 1) {
+        state.activeQuizIndex++;
+        renderQuizQuestion();
+      } else {
+        // Quiz complete!
+        showQuizResults();
+      }
+    });
+
+    function showQuizResults() {
+      const quizActiveView = document.getElementById('quizActiveView');
+      const quizResultView = document.getElementById('quizResultView');
+
+      quizActiveView.style.display = 'none';
+      quizResultView.style.display = 'flex';
+
+      const correctCount = state.quizAnswersSelected.filter(a => a).length;
+      const totalCount = state.quizAnswersSelected.length;
+
+      document.getElementById('quizScoreText').textContent = `${correctCount}/${totalCount}`;
+      
+      const isPerfect = correctCount === totalCount;
+      document.getElementById('quizVerdict').textContent = isPerfect ? "Mastery Achieved!" : "Insight Acquired";
+      document.getElementById('quizResultSummary').textContent = isPerfect 
+        ? "You've successfully solved all problem parameters in this module and can confidently proceed."
+        : "You've completed the assessment modules. Proceed to lock-in chapter completion, or retry at your leisure.";
+
+      // Update Course Progress State
+      const currentChapterIdx = state.activeChapterIndex;
+      if (!state.activeCourse.completedChapters.includes(currentChapterIdx)) {
+        state.activeCourse.completedChapters.push(currentChapterIdx);
+        
+        // Calculate new progress percentage
+        const progressPercent = Math.round((state.activeCourse.completedChapters.length / state.activeCourse.chaptersCount) * 100);
+        state.activeCourse.progress = progressPercent;
+        
+        // Save to global library
+        const libIndex = state.library.findIndex(c => c.id === state.activeCourse.id);
+        if (libIndex !== -1) {
+          state.library[libIndex] = state.activeCourse;
+          saveLibrary();
+        }
+      }
+
+      // If last chapter is complete, make proceed button finish course
+      const finishBtn = document.getElementById('quizFinishBtn');
+      if (state.activeChapterIndex === state.activeCourse.data.chapters.length - 1) {
+        finishBtn.textContent = "Finish Course & Return Home";
+      } else {
+        finishBtn.textContent = "Proceed to Next Module";
+      }
+
+      updateCourseProgressUI();
+      renderSyllabusSidebar();
+    }
+
+    // Proceed from Quiz results
+    document.getElementById('quizFinishBtn').addEventListener('click', () => {
+      const nextIndex = state.activeChapterIndex + 1;
+      
+      if (nextIndex < state.activeCourse.data.chapters.length) {
+        loadChapter(nextIndex);
+        renderSyllabusSidebar();
+      } else {
+        // Entire course is complete!
+        alert(`Congratulations! You have completed the entire course: ${state.activeCourse.title}!`);
+        showScreen('library');
+      }
+    });
+
+    // Back to home action
+    document.getElementById('backToHomeBtn').addEventListener('click', () => {
+      showScreen('home');
+    });
+
+    /* -------------------------------------------------------------
+       I. LIBRARY SCREEN RENDERING
+       ------------------------------------------------------------- */
+    /* -------------------------------------------------------------
+       I. SLIDE-TO-RESUME INTERACTIVE SWIPE CONTROL
+       ------------------------------------------------------------- */
+    function initSlideToResumeControl(courseId) {
+      const track = document.getElementById('slideToResumeTrack');
+      const handle = document.getElementById('slideToResumeHandle');
+      const icon = document.getElementById('slideHandleIcon');
+      if (!track || !handle) return;
+
+      let isDragging = false;
+      let startX = 0;
+      let currentTranslateX = 0;
+      
+      // Calculate sliding bounds (Padding total is 6px: 3px left, 3px right)
+      let maxDrag = track.clientWidth - handle.clientWidth - 6;
+      
+      window.addEventListener('resize', () => {
+        maxDrag = track.clientWidth - handle.clientWidth - 6;
+      });
+
+      function onStart(x) {
+        isDragging = true;
+        startX = x - currentTranslateX;
+        handle.style.transition = 'none';
+      }
+
+      function onMove(x) {
+        if (!isDragging) return;
+        let dragX = x - startX;
+        if (dragX < 0) dragX = 0;
+        if (dragX > maxDrag) dragX = maxDrag;
+        currentTranslateX = dragX;
+        handle.style.transform = `translateX(${dragX}px)`;
+
+        // Fade text out as handle slides over
+        const text = track.querySelector('.slide-to-resume-text');
+        if (text) {
+          text.style.opacity = Math.max(0, 1 - (dragX / (maxDrag * 0.7)));
+        }
+      }
+
+      function onEnd() {
+        if (!isDragging) return;
+        isDragging = false;
+        
+        // Threshold check (80%)
+        if (currentTranslateX >= maxDrag * 0.8) {
+          // Snap to end
+          handle.style.transition = 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)';
+          handle.style.transform = `translateX(${maxDrag}px)`;
+          icon.textContent = 'lock_open';
+          icon.style.color = '#10B981'; // Unlocked green glow
+          handle.style.backgroundColor = '#ffffff';
+
+          setTimeout(() => {
+            resetHandle();
+            loadCourseIntoWorkspace(courseId);
+          }, 350);
+        } else {
+          resetHandle();
+        }
+      }
+
+      function resetHandle() {
+        handle.style.transition = 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+        handle.style.transform = 'translateX(0px)';
+        handle.style.backgroundColor = '#1a1c1d';
+        icon.textContent = 'lock';
+        icon.style.color = '#ffffff';
+        currentTranslateX = 0;
+        const text = track.querySelector('.slide-to-resume-text');
+        if (text) {
+          text.style.opacity = 1;
+        }
+      }
+
+      // Desktop Mouse Drag events (Leak-proof pattern)
+      handle.addEventListener('mousedown', (e) => {
+        onStart(e.clientX);
+        
+        const onMouseMove = (moveEv) => {
+          if (isDragging) onMove(moveEv.clientX);
+        };
+        
+        const onMouseUp = () => {
+          window.removeEventListener('mousemove', onMouseMove);
+          window.removeEventListener('mouseup', onMouseUp);
+          onEnd();
+        };
+        
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
+      });
+
+      // Mobile Touch Drag events (Leak-proof pattern)
+      handle.addEventListener('touchstart', (e) => {
+        onStart(e.touches[0].clientX);
+        
+        const onTouchMove = (moveEv) => {
+          if (isDragging) onMove(moveEv.touches[0].clientX);
+        };
+        
+        const onTouchEnd = () => {
+          window.removeEventListener('touchmove', onTouchMove);
+          window.removeEventListener('touchend', onTouchEnd);
+          onEnd();
+        };
+        
+        window.addEventListener('touchmove', onTouchMove, { passive: true });
+        window.addEventListener('touchend', onTouchEnd);
+      }, { passive: true });
+    }
+
+    /* -------------------------------------------------------------
+       I. SQUARE CARD HAND-DRAWN MINIMALIST VECTOR GENERATOR
+       ------------------------------------------------------------- */
+    function getVectorArtForSquare(topic, themeColor) {
+      if (themeColor === 'amber') {
+        // Person sitting at a desk with a laptop and a lightbulb thought bubble (Figma/Coding style)
+        return `
+          <svg viewBox="0 0 100 100" style="width: 75px; height: 75px;" xmlns="http://www.w3.org/2000/svg">
+            <!-- Thought bubble lightbulb -->
+            <path d="M 68,15 C 65,12 60,12 57,15 C 54,18 54,23 57,26 C 58,28 60,29 60,32 L 65,32 C 65,29 67,28 68,26 C 71,23 71,18 68,15 Z" fill="none" stroke="#1A1C1D" stroke-width="1.8" />
+            <line x1="60.5" y1="34" x2="64.5" y2="34" stroke="#1A1C1D" stroke-width="1.8" />
+            <path d="M 52,24 Q 48,22 45,25" fill="none" stroke="#1A1C1D" stroke-width="1.2" stroke-dasharray="1.5 1.5" />
+            
+            <!-- Person outline -->
+            <path d="M 30,55 C 28,50 32,45 38,45 C 44,45 46,50 44,55" fill="none" stroke="#1A1C1D" stroke-width="1.8" />
+            <circle cx="37" cy="38" r="7" fill="none" stroke="#1A1C1D" stroke-width="1.8" />
+            <!-- Arm/Hands coding -->
+            <path d="M 30,58 L 48,58 L 52,65" fill="none" stroke="#1A1C1D" stroke-width="1.8" stroke-linecap="round" />
+            
+            <!-- Laptop on desk -->
+            <path d="M 45,70 L 65,70 L 68,60 L 52,60 Z" fill="#FFFFFF" stroke="#1A1C1D" stroke-width="1.8" stroke-linejoin="round" />
+            <line x1="42" y1="70" x2="68" y2="70" stroke="#1A1C1D" stroke-width="2.5" stroke-linecap="round" />
+            
+            <!-- Floating organic spot -->
+            <circle cx="37" cy="38" r="4" fill="#FFCC00" opacity="0.4" />
+          </svg>
+        `;
+      } else if (themeColor === 'mint') {
+        // Person holding a big jar of thoughts/brain power (financial jar style)
+        return `
+          <svg viewBox="0 0 100 100" style="width: 75px; height: 75px;" xmlns="http://www.w3.org/2000/svg">
+            <!-- Jar of savings/insights -->
+            <rect x="52" y="48" width="18" height="24" rx="4" fill="#FFFFFF" stroke="#1A1C1D" stroke-width="1.8" />
+            <line x1="55" y1="48" x2="67" y2="48" stroke="#1A1C1D" stroke-width="2.5" />
+            <circle cx="61" cy="60" r="4" fill="#10B981" />
+            
+            <!-- Person outline holding jar -->
+            <circle cx="38" cy="36" r="7" fill="none" stroke="#1A1C1D" stroke-width="1.8" />
+            <path d="M 32,55 C 30,46 36,44 42,44 C 48,44 50,48 48,55" fill="none" stroke="#1A1C1D" stroke-width="1.8" />
+            <path d="M 42,50 Q 52,50 54,58" fill="none" stroke="#1A1C1D" stroke-width="1.8" stroke-linecap="round" />
+            
+            <!-- Organic pastel background blob -->
+            <circle cx="61" cy="60" r="10" fill="#B2DFDB" opacity="0.5" z-index="-1" />
+          </svg>
+        `;
+      } else if (themeColor === 'blue') {
+        // Person looking through a telescope at Saturn (Astrophysics style)
+        return `
+          <svg viewBox="0 0 100 100" style="width: 75px; height: 75px;" xmlns="http://www.w3.org/2000/svg">
+            <!-- Telescope -->
+            <line x1="28" y1="58" x2="68" y2="35" stroke="#1A1C1D" stroke-width="2.5" stroke-linecap="round" />
+            <line x1="48" y1="46" x2="40" y2="70" stroke="#1A1C1D" stroke-width="1.8" />
+            <line x1="48" y1="46" x2="56" y2="70" stroke="#1A1C1D" stroke-width="1.8" />
+            
+            <!-- Planet / Star -->
+            <circle cx="75" cy="25" r="5" fill="#29B6F6" />
+            <ellipse cx="75" cy="25" rx="8" ry="2" fill="none" stroke="#1A1C1D" stroke-width="1.2" transform="rotate(-15 75 25)" />
+            
+            <!-- Person looking -->
+            <circle cx="22" cy="56" r="6" fill="none" stroke="#1A1C1D" stroke-width="1.8" />
+            <path d="M 18,72 C 16,65 20,62 25,62" fill="none" stroke="#1A1C1D" stroke-width="1.8" stroke-linecap="round" />
+            
+            <!-- Background organic spot -->
+            <circle cx="75" cy="25" r="9" fill="#B3E5FC" opacity="0.5" />
+          </svg>
+        `;
+      } else {
+        // Person reading a giant book (Philosophy/Humanities style)
+        return `
+          <svg viewBox="0 0 100 100" style="width: 75px; height: 75px;" xmlns="http://www.w3.org/2000/svg">
+            <!-- Giant open book -->
+            <path d="M 25,60 C 35,58 45,62 50,65 C 55,62 65,58 75,60 L 75,40 C 65,38 55,42 50,45 C 45,42 35,38 25,40 Z" fill="#FFFFFF" stroke="#1A1C1D" stroke-width="1.8" stroke-linejoin="round" />
+            <line x1="50" y1="45" x2="50" y2="65" stroke="#1A1C1D" stroke-width="1.8" />
+            
+            <!-- Person line art leaning over book -->
+            <circle cx="50" cy="26" r="6" fill="none" stroke="#1A1C1D" stroke-width="1.8" />
+            <path d="M 40,42 C 40,32 60,32 60,42" fill="none" stroke="#1A1C1D" stroke-width="1.8" />
+            
+            <!-- Background organic spot -->
+            <circle cx="50" cy="26" r="10" fill="#E1BEE7" opacity="0.5" />
+          </svg>
+        `;
+      }
+    }
+
+    /* -------------------------------------------------------------
+       I. VECTOR ART SVG ILLUSTRATION GENERATOR
+       ------------------------------------------------------------- */
+    function getVectorArtForCourse(topic, themeColor) {
+      const themeColors = {
+        'amber': { bg: '#FFCC00', stroke: '#1a1c1d', fill: '#FFE0B2' },
+        'blue': { bg: '#29B6F6', stroke: '#1a1c1d', fill: '#B3E5FC' },
+        'mint': { bg: '#26A69A', stroke: '#1a1c1d', fill: '#B2DFDB' },
+        'lavender': { bg: '#AB47BC', stroke: '#1a1c1d', fill: '#E1BEE7' }
+      };
+
+      const selected = themeColors[themeColor] || themeColors['amber'];
+
+      return `
+        <svg viewBox="0 0 140 140" style="width: 100%; height: 100%;" xmlns="http://www.w3.org/2000/svg">
+          <!-- Background Organic Graphic Sun (Warm Cozy Yellow Accent) -->
+          <circle cx="75" cy="70" r="45" fill="#FFEAA7" opacity="0.85" />
+          
+          <!-- Geometric Accent Blocks -->
+          <path d="M45,80 Q65,40 100,50 L110,80 Z" fill="${selected.fill}" opacity="0.7" />
+          <circle cx="105" cy="50" r="10" fill="${selected.bg}" opacity="0.8" />
+          
+          <!-- Abstract Line Swirl (matching Figma design squiggle line) -->
+          <path d="M 30,105 C 50,105 50,60 70,60 C 90,60 90,105 110,105" fill="none" stroke="#2D3436" stroke-width="2.5" stroke-dasharray="1 1" opacity="0.4" />
+          
+          <!-- Stylized Minimalist Person studying (Line Art + Color Blobs) -->
+          <!-- Head / Hair -->
+          <path d="M 72,40 C 65,36 58,40 55,48 C 52,56 56,66 65,70" fill="none" stroke="#1A1C1D" stroke-width="2.5" stroke-linecap="round" />
+          <!-- Face profile line -->
+          <path d="M 68,44 L 62,48 L 65,54 C 65,54 62,56 64,60" fill="none" stroke="#1A1C1D" stroke-width="2.5" stroke-linecap="round" />
+          <!-- Big Yellow Coat Color Block -->
+          <path d="M 52,80 C 45,95 40,110 40,120 L 95,120 C 95,110 85,95 72,80 Z" fill="#F5B041" />
+          <!-- Body Outline -->
+          <path d="M 52,80 C 45,95 40,110 40,120 L 95,120 C 95,110 85,95 72,80 C 65,72 58,72 52,80 Z" fill="none" stroke="#1A1C1D" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />
+          <!-- Book Line Art -->
+          <path d="M 55,95 L 75,90 L 90,100 L 70,105 Z" fill="#FFFFFF" stroke="#1A1C1D" stroke-width="2.5" stroke-linejoin="round" />
+          <path d="M 72,91 L 70,105" fill="none" stroke="#1A1C1D" stroke-width="2.5" />
+          
+          <!-- Floating Heart / Curiosity icons -->
+          <path d="M 108,78 C 108,78 111,74 115,74 C 119,74 122,77 122,81 C 122,86 115,92 115,92 C 115,92 108,86 108,81 Z" fill="${selected.bg}" />
+        </svg>
+      `;
+    }
+
+    function getThemeForTopic(topic) {
+      const lower = topic.toLowerCase();
+      if (lower.includes('quantum') || lower.includes('science')) return 'lavender';
+      if (lower.includes('neuron') || lower.includes('brain') || lower.includes('mind') || lower.includes('neurology') || lower.includes('finance') || lower.includes('financial')) return 'mint';
+      if (lower.includes('astrophysics') || lower.includes('space') || lower.includes('physics')) return 'blue';
+      if (lower.includes('philosophy') || lower.includes('ethics') || lower.includes('bread') || lower.includes('game') || lower.includes('mobile') || lower.includes('app') || lower.includes('coding') || lower.includes('react')) return 'amber';
+      return 'amber';
+    }
+
+    /* -------------------------------------------------------------
+       I. LIBRARY SCREEN RENDERING
+       ------------------------------------------------------------- */
+    function renderLibrary() {
+      const grid = document.getElementById('libraryGrid');
+      const featuredContainer = document.getElementById('featuredCourseContainer');
+      const libraryCoursesSection = document.getElementById('libraryCoursesSection');
+      const emptyView = document.getElementById('emptyLibrary');
+      const countBadge = document.getElementById('libraryCoursesCount');
+
+      grid.innerHTML = '';
+      featuredContainer.innerHTML = '';
+
+      if (state.library.length === 0) {
+        libraryCoursesSection.style.display = 'none';
+        featuredContainer.style.display = 'none';
+        emptyView.style.display = 'flex';
+        return;
+      }
+
+      emptyView.style.display = 'none';
+      libraryCoursesSection.style.display = 'block';
+      featuredContainer.style.display = 'block';
+
+      // 1. Featured Card (Last Studied Course)
+      const lastStudied = state.library[0];
+      const featuredTheme = getThemeForTopic(lastStudied.query);
+      
+      const featuredCard = document.createElement('div');
+      featuredCard.className = 'featured-course-card';
+      featuredCard.innerHTML = `
+        <div class="featured-left">
+          <span class="featured-tag-badge">Active DeepDive</span>
+          <h3 class="featured-title">${lastStudied.title}</h3>
+          <span class="featured-author">${lastStudied.completedChapters.length}/${lastStudied.chaptersCount} Chapters Completed</span>
+          <div class="slide-to-resume-container" id="slideToResumeTrack">
+            <div class="slide-to-resume-track">
+              <div class="slide-to-resume-text">
+                Continue learning
+              </div>
+              <div class="slide-to-resume-handle" id="slideToResumeHandle">
+                <span class="material-symbols-outlined" id="slideHandleIcon">lock</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="featured-right-vector">
+          ${getVectorArtForCourse(lastStudied.title, featuredTheme)}
+        </div>
+      `;
+
+      featuredContainer.appendChild(featuredCard);
+
+      // Initialize slide swipe interaction
+      initSlideToResumeControl(lastStudied.id);
+
+      // 2. Square Cards Grid (All remaining studied courses + templates if library is small)
+      const squareCourses = [];
+      
+      // Add other studied courses currently active in library
+      for (let i = 1; i < state.library.length; i++) {
+        squareCourses.push({
+          id: state.library[i].id,
+          title: state.library[i].title,
+          chaptersCount: state.library[i].chaptersCount,
+          completedCount: state.library[i].completedChapters.length,
+          icon: state.library[i].icon,
+          query: state.library[i].query,
+          isPremiumTemplate: false
+        });
+      }
+
+      // Populate squares with premade premium templates if space permits to keep screen rich
+      const premiumKeys = Object.keys(PREMADE_COURSES);
+      premiumKeys.forEach(key => {
+        const topicId = key.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        const isActive = state.library.some(c => c.id === topicId);
+        
+        if (!isActive && squareCourses.length < 4) {
+          squareCourses.push({
+            id: topicId + '-template',
+            title: PREMADE_COURSES[key].title,
+            chaptersCount: PREMADE_COURSES[key].chapters.length,
+            completedCount: 0,
+            icon: PREMADE_COURSES[key].icon,
+            query: key,
+            isPremiumTemplate: true
+          });
+        }
+      });
+
+      // Update count badge
+      countBadge.textContent = squareCourses.length;
+
+      // Render square cards
+      squareCourses.forEach(course => {
+        const theme = getThemeForTopic(course.query);
+        const card = document.createElement('div');
+        card.className = `square-course-card square-card-theme-${theme}`;
+        
+        // Dynamic duration & files to match screenshot
+        let durationText = "1hr 30 min";
+        let filesCount = "12 Files";
+
+        if (course.title.toLowerCase().includes("react native") || course.title.toLowerCase().includes("mobile")) {
+          durationText = "1hr 45 min";
+          filesCount = "16 Files";
+        } else if (course.title.toLowerCase().includes("financial management") || course.title.toLowerCase().includes("finance")) {
+          durationText = "2hr 20 min";
+          filesCount = "19 Files";
+        } else if (course.title.toLowerCase().includes("neurology") || course.title.toLowerCase().includes("cognitive")) {
+          durationText = "2hr 15 min";
+          filesCount = "18 Files";
+        } else if (course.title.toLowerCase().includes("quantum")) {
+          durationText = "1hr 15 min";
+          filesCount = "10 Files";
+        }
+
+        card.innerHTML = `
+          <h4 class="square-card-title">${course.title}</h4>
+          <div class="square-card-vector-wrapper" style="width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; margin: 8px 0;">
+            ${getVectorArtForSquare(course.title, theme)}
+          </div>
+          <div class="square-card-bottom-row" style="display: flex; justify-content: space-between; align-items: center; width: 100%; font-size: 11px; font-weight: 700; color: rgba(26,28,29,0.6); border-top: 1px solid rgba(26,28,29,0.08); padding-top: 10px; margin-top: 4px;">
+            <span>${durationText}</span>
+            <span>${filesCount}</span>
+            <span class="material-symbols-outlined bookmark-icon" style="font-size: 16px; color: #1a1c1d; cursor: pointer; font-variation-settings: 'FILL' 1; transition: all 0.2s ease;">bookmark</span>
+          </div>
+        `;
+
+        // Toggle bookmark fill state interactively
+        const bookmarkBtn = card.querySelector('.bookmark-icon');
+        if (bookmarkBtn) {
+          bookmarkBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const currentFill = bookmarkBtn.style.fontVariationSettings || "'FILL' 1";
+            if (currentFill === "'FILL' 1") {
+              bookmarkBtn.style.fontVariationSettings = "'FILL' 0";
+              bookmarkBtn.style.color = 'rgba(26,28,29,0.45)';
+            } else {
+              bookmarkBtn.style.fontVariationSettings = "'FILL' 1";
+              bookmarkBtn.style.color = '#1a1c1d';
+            }
+          });
+        }
+
+        card.addEventListener('click', () => {
+          if (state.isScrollingLibraryGrid) return; // Suppress template customizer during scroll
+          
+          if (course.isPremiumTemplate) {
+            state.searchQuery = course.query;
+            startAIGenerationSequence();
+          } else {
+            loadCourseIntoWorkspace(course.id);
+          }
+        });
+
+        grid.appendChild(card);
+      });
+    }
+
+    // Empty Library Action Button
+    document.getElementById('emptyLibraryExploreBtn').addEventListener('click', () => {
+      showScreen('home');
+    });
+
+    // Init Header Menu and Profile Clicks for show visual confirmation
+    document.getElementById('menuBtn').addEventListener('click', () => {
+      const confirmReset = confirm("DeepDive Options Menu:\n\n- Click OK to Reset Library with the 4 default mock courses (matching screenshot).\n- Click Cancel to close menu.");
+      if (confirmReset) {
+        localStorage.removeItem('deepdive_library_v4');
+        loadSavedLibrary();
+        renderLibrary();
+        alert("Mock courses loaded successfully!");
+      }
+    });
+    
+    document.getElementById('profileBtn').addEventListener('click', () => {
+      showScreen('library');
+    });
+
+    /* -------------------------------------------------------------
+       J. TYPEWRITER EFFECT FOR SEARCH BAR PLACEHOLDER
+       ------------------------------------------------------------- */
+    const placeholderOptions = [
+      "game theory but for a MBA graduate...",
+      "python programming tailored for data analysts...",
+      "neurology from the perspective of an AI researcher...",
+      "microeconomics for sustainable energy policy makers...",
+      "astrophysics concepts for science fiction writers...",
+      "advanced quantum mechanics simplified for high schoolers...",
+      "organic chemistry for culinary arts students...",
+      "corporate finance strategies for startup founders..."
+    ];
+
+    let optionIndex = 0;
+    let charIndex = 0;
+    let isDeleting = false;
+    const baseText = "Make a course on ";
+
+    function typeWriterEffect() {
+      const searchInput = document.getElementById('searchInput');
+      if (!searchInput) return;
+
+      const currentSuffix = placeholderOptions[optionIndex];
+      
+      if (isDeleting) {
+        searchInput.placeholder = baseText + currentSuffix.substring(0, charIndex);
+        charIndex--;
+      } else {
+        searchInput.placeholder = baseText + currentSuffix.substring(0, charIndex);
+        charIndex++;
+      }
+
+      let typeSpeed = 60;
+      if (isDeleting) {
+        typeSpeed = 30;
+      }
+
+      if (!isDeleting && charIndex === currentSuffix.length + 1) {
+        typeSpeed = 2500; // Hold the completed fun suggestion longer for reading
+        isDeleting = true;
+      } else if (isDeleting && charIndex < 0) {
+        isDeleting = false;
+        optionIndex = (optionIndex + 1) % placeholderOptions.length;
+        typeSpeed = 400; // Pause before typing next
+      }
+
+      setTimeout(typeWriterEffect, typeSpeed);
+    }
+
+    /* -------------------------------------------------------------
+       K. INITIALIZATION TRIGGER
+       ------------------------------------------------------------- */
+    window.addEventListener('DOMContentLoaded', () => {
+      loadSavedLibrary();
+      showScreen('home');
+      
+      // Start typewriter effect
+      setTimeout(typeWriterEffect, 500);
+
+      // Smooth horizontal scroll translation for desktop mouse wheels
+      const scrollContainer = document.getElementById('libraryGrid');
+      if (scrollContainer) {
+        scrollContainer.addEventListener('wheel', (evt) => {
+          if (evt.deltaY !== 0) {
+            evt.preventDefault();
+            scrollContainer.scrollLeft += evt.deltaY;
+          }
+        }, { passive: false });
+
+        let scrollTimeout;
+        scrollContainer.addEventListener('scroll', () => {
+          state.isScrollingLibraryGrid = true;
+          clearTimeout(scrollTimeout);
+          scrollTimeout = setTimeout(() => {
+            state.isScrollingLibraryGrid = false;
+          }, 150);
+        }, { passive: true });
+      }
+    });
+
+  </script>
+</body>
+</html>
