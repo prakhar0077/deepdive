@@ -3777,34 +3777,35 @@
   <div class="customizer-backdrop" id="customizerBackdrop"></div>
   <div class="customizer-drawer glass-popover" id="customizerDrawer">
     <div class="drawer-handle"></div>
-    <h3 class="drawer-title">Curate DeepDive</h3>
+    <h3 class="drawer-title" id="customizerDrawerTitle" style="color: #ede0ff; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; margin-bottom: 20px;">Curate DeepDive</h3>
     
-    <div class="customizer-group">
-      <span class="customizer-label">Syllabus Depth</span>
-      <div class="options-row">
-        <div class="option-pill active" data-depth="2">2 Chapters (Crash Course)</div>
-        <div class="option-pill" data-depth="4">4 Chapters (Comprehensive)</div>
+    <div class="customizer-group" style="margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+        <span class="customizer-label" style="font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 0.05em; font-family: 'Plus Jakarta Sans', sans-serif;">How many modules?</span>
+        <span id="customizerModulesVal" style="color: #d2bbff; font-weight: 700; font-size: 14px; font-family: 'Plus Jakarta Sans', sans-serif;">4 Modules</span>
+      </div>
+      <input type="range" min="2" max="6" value="4" id="customizerModulesSlider" style="width: 100%; height: 6px; background: rgba(255, 255, 255, 0.1); border-radius: 9999px; outline: none; -webkit-appearance: none; margin: 8px 0; cursor: pointer; accent-color: #7C3AED;">
+    </div>
+
+    <div class="customizer-group" style="margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px;">
+      <span class="customizer-label" style="font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 0.05em; font-family: 'Plus Jakarta Sans', sans-serif;">Difficulty Pathing</span>
+      <label style="display: inline-flex; align-items: center; gap: 10px; margin-top: 4px; cursor: pointer; font-size: 14px; font-weight: 600; color: #ede0ff; user-select: none; font-family: 'Plus Jakarta Sans', sans-serif;">
+        <input type="checkbox" id="customizerDifficultyTickbox" checked style="accent-color: #7C3AED; width: 20px; height: 20px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.25); background: rgba(0,0,0,0.3); cursor: pointer;">
+        Beginners to Advanced (All Levels)
+      </label>
+    </div>
+
+    <div class="customizer-group" style="margin-bottom: 32px; display: flex; flex-direction: column; gap: 8px;">
+      <span class="customizer-label" style="font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 0.05em; font-family: 'Plus Jakarta Sans', sans-serif;">Core Course Focus</span>
+      <div class="options-row" style="display: flex; gap: 8px;">
+        <div class="option-pill active" data-focus="conceptual" style="padding: 8px 16px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 9999px; color: #ede0ff; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s; font-family: 'Plus Jakarta Sans', sans-serif;">Conceptual</div>
+        <div class="option-pill" data-focus="practical" style="padding: 8px 16px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 9999px; color: #ede0ff; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s; font-family: 'Plus Jakarta Sans', sans-serif;">Practical</div>
+        <div class="option-pill" data-focus="case-study" style="padding: 8px 16px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 9999px; color: #ede0ff; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s; font-family: 'Plus Jakarta Sans', sans-serif;">Case-Study</div>
       </div>
     </div>
 
-    <div class="customizer-group">
-      <span class="customizer-label">Curator Focus</span>
-      <div class="options-row">
-        <div class="option-pill active" data-focus="conceptual">Conceptual (Core Concepts)</div>
-        <div class="option-pill" data-focus="practical">Practical (Applied Lab)</div>
-      </div>
-    </div>
-
-    <div class="customizer-group" style="margin-bottom: 32px;">
-      <span class="customizer-label">Primary Media Medium</span>
-      <div class="options-row">
-        <div class="option-pill active" data-media="video">Video & Readings</div>
-        <div class="option-pill" data-media="academic">Academic Papers & Text</div>
-      </div>
-    </div>
-
-    <button class="btn-pebble btn-primary" id="startGenerationBtn" style="width: 100%; height: 50px; font-size: 16px;">
-      Generate Syllabus <span class="material-symbols-outlined">rocket_launch</span>
+    <button class="btn-pebble btn-primary" id="startGenerationBtn" style="width: 100%; height: 50px; font-size: 16px; border: none; border-radius: 12px; background: linear-gradient(135deg, #7C3AED, #4F46E5); color: white; font-weight: 700; cursor: pointer; box-shadow: 0 4px 15px rgba(124,58,237,0.3); display: flex; align-items: center; justify-content: center; gap: 8px; font-family: 'Plus Jakarta Sans', sans-serif;">
+      Generate Syllabus <span class="material-symbols-outlined" style="font-size: 20px;">rocket_launch</span>
     </button>
   </div>
 
@@ -3813,6 +3814,9 @@
        JAVASCRIPT LOGIC & STATE ENGINE
        ========================================================================= -->
   <script>
+    const NVIDIA_API_KEY = "PASTE_YOUR_NVAPI_KEY_HERE";
+    const FALLBACK_NVIDIA_API_KEY = "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";
+
     /* -------------------------------------------------------------
        A. CORE APPLICATION DATABASE (Pre-made Premium Courses)
        ------------------------------------------------------------- */
@@ -4816,9 +4820,9 @@
       currentScreen: 'home',
       searchQuery: '',
       customizer: {
-        depth: 2,
+        depth: 4,
         focus: 'conceptual',
-        media: 'video'
+        difficultyProgression: true
       },
       activeCourse: null,
       activeChapterIndex: 0,
@@ -5310,12 +5314,11 @@
       });
     });
 
-    // 3. Search triggers (Direct generation bypasses customizer)
+    // 3. Search triggers (open customizer drawer popup)
     document.getElementById('searchBtn').addEventListener('click', () => {
       const value = document.getElementById('searchInput').value;
       if (value.trim()) {
-        state.searchQuery = value;
-        startAIGenerationSequence();
+        triggerSyllabusCustomizer(value);
       }
     });
 
@@ -5323,8 +5326,7 @@
       if (e.key === 'Enter') {
         const value = e.target.value;
         if (value.trim()) {
-          state.searchQuery = value;
-          startAIGenerationSequence();
+          triggerSyllabusCustomizer(value);
         }
       }
     });
@@ -5354,21 +5356,262 @@
         pill.classList.add('active');
 
         // Update state
-        if (pill.getAttribute('data-depth')) {
-          state.customizer.depth = parseInt(pill.getAttribute('data-depth'));
-        } else if (pill.getAttribute('data-focus')) {
+        if (pill.getAttribute('data-focus')) {
           state.customizer.focus = pill.getAttribute('data-focus');
-        } else if (pill.getAttribute('data-media')) {
-          state.customizer.media = pill.getAttribute('data-media');
         }
       });
     });
 
+    // Wire up dynamic Customizer inputs
+    const slider = document.getElementById('customizerModulesSlider');
+    const sliderVal = document.getElementById('customizerModulesVal');
+    if (slider && sliderVal) {
+      slider.addEventListener('input', (e) => {
+        sliderVal.textContent = `${e.target.value} Modules`;
+        state.customizer.depth = parseInt(e.target.value);
+      });
+    }
+
+    const tickbox = document.getElementById('customizerDifficultyTickbox');
+    if (tickbox) {
+      tickbox.addEventListener('change', (e) => {
+        state.customizer.difficultyProgression = e.target.checked;
+      });
+    }
+
     // Start Generation Event
     document.getElementById('startGenerationBtn').addEventListener('click', () => {
       closeCustomizer();
-      startAIGenerationSequence();
+      generateNvidiaCourse(state.searchQuery);
     });
+
+    // Global facades/aliases mapping user-literal commands to our dynamic UI updates
+    window.renderMap = function() {
+      renderLibrary();
+    };
+
+    window.updateProgressMetrics = function() {
+      updateHeaderProgressGauge();
+      updateCourseProgressUI();
+    };
+
+    // NVIDIA NIM API fetch and course schema hydration
+    async function generateNvidiaCourse(topic) {
+      showScreen('loading');
+      
+      const bar = document.getElementById('shimmerBar');
+      const titleEl = document.getElementById('loadingTitle');
+      const subEl = document.getElementById('loadingSub');
+
+      titleEl.textContent = "Connecting to NVIDIA NIM";
+      subEl.textContent = "Initiating academic curriculum synthesis...";
+      bar.style.width = "10%";
+
+      // Determine correct API key (supports fallback if key is unmodified)
+      let apiKey = NVIDIA_API_KEY;
+      if (apiKey === "PASTE_YOUR_NVAPI_KEY_HERE") {
+        apiKey = FALLBACK_NVIDIA_API_KEY;
+      }
+
+      const numModules = state.customizer.depth || 4;
+      const focus = state.customizer.focus || "conceptual";
+      const isProgressive = !!state.customizer.difficultyProgression;
+
+      const systemPrompt = `You are an Ivy League academic curriculum curator. Generate a comprehensive ${numModules}-part progressive course for the topic: "${topic}".
+Focus: ${focus}. Difficulty Pathing: ${isProgressive ? 'Beginner to Advanced Path' : 'Standard'}.
+You must return ONLY a raw, minified, valid JSON object matching our application schema. Do not wrap the JSON in markdown code blocks (\`\`\`json) or include any other text outside the JSON.
+
+The JSON structure must be:
+{
+  "title": "${topic} Accelerator",
+  "icon": "psychology",
+  "chapters": [
+    {
+      "index": "Chapter 1",
+      "title": "Milestone 1: [Milestone Title]",
+      "video": {
+        "title": "[Main Video Title]",
+        "duration": "12 mins",
+        "embedId": "dQw4w9WgXcQ",
+        "takeaways": [
+          "[Key Takeaway Bullet 1]",
+          "[Key Takeaway Bullet 2]",
+          "[Key Takeaway Bullet 3]"
+        ]
+      },
+      "article": {
+        "title": "[Main Reading Title]",
+        "body": "<p>[Detailed high-fidelity article reading body...]</p><div class=\\"article-highlight-box\\"><h5>[Highlight Header]</h5><p>[Core concept highlight text...]</p></div><p>[Further educational paragraphs...]</p>"
+      },
+      "videoQuiz": [
+        {
+          "question": "[Conceptual assessment question 1]?",
+          "options": [
+            { "text": "[Correct Option text]", "correct": true },
+            { "text": "[Incorrect Option 1]", "correct": false },
+            { "text": "[Incorrect Option 2]", "correct": false }
+          ],
+          "explanation": "[Detailed educational explanation of why the correct option is right]"
+        },
+        {
+          "question": "[Conceptual assessment question 2]?",
+          "options": [
+            { "text": "[Incorrect Option 1]", "correct": false },
+            { "text": "[Correct Option text]", "correct": true },
+            { "text": "[Incorrect Option 2]", "correct": false }
+          ],
+          "explanation": "[Detailed educational explanation]"
+        }
+      ],
+      "readingQuiz": [
+        {
+          "question": "[Reading comprehension question 1]?",
+          "options": [
+            { "text": "[Correct Option text]", "correct": true },
+            { "text": "[Incorrect Option 1]", "correct": false },
+            { "text": "[Incorrect Option 2]", "correct": false }
+          ],
+          "explanation": "[Detailed educational explanation]"
+        },
+        {
+          "question": "[Reading comprehension question 2]?",
+          "options": [
+            { "text": "[Incorrect Option 1]", "correct": false },
+            { "text": "[Correct Option text]", "correct": true },
+            { "text": "[Incorrect Option 2]", "correct": false }
+          ],
+          "explanation": "[Detailed educational explanation]"
+        }
+      ],
+      "videoQuests": [
+        { "id": "vid-1", "label": "[Video 1 Title]", "type": "video", "icon": "play_circle", "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", "resourceName": "[Video 1 Title] Video Lecture (Channel: [Real YouTube Channel Name])" },
+        ... (Exactly ${numModules} elements labeled vid-1 to vid-${numModules})
+        { "id": "bonus-vid", "label": "[Bonus Video Title]", "type": "bonus-video", "icon": "auto_awesome", "isBonus": true, "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", "resourceName": "[Bonus Video Title] Video Teardown (Channel: [Real YouTube Channel])" },
+        { "id": "vid-quiz", "label": "Baselines Video Quiz", "type": "quiz", "icon": "quiz", "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", "resourceName": "Milestone Video Assessment Quiz" }
+      ],
+      "readingQuests": [
+        { "id": "read-1", "label": "[Reading 1 Title]", "type": "reading", "icon": "menu_book", "url": "https://medium.com/deepdive", "resourceName": "Book: [Real Book/Article Title] by [Real Author Name] - Chapter 1: [Real Chapter Title]" },
+        ... (Exactly ${numModules} elements labeled read-1 to read-${numModules})
+        { "id": "bonus-read", "label": "[Bonus Reading Title]", "type": "bonus-reading", "icon": "library_books", "isBonus": true, "url": "https://medium.com/deepdive", "resourceName": "[Bonus Reading Title] by [Real Author Name]" },
+        { "id": "read-quiz", "label": "Baselines Reading Quiz", "type": "quiz", "icon": "quiz", "url": "https://medium.com/deepdive", "resourceName": "Milestone Reading Assessment Quiz" }
+      ]
+    }
+  ]
+}
+
+Generate exactly ${numModules} chapters, matching chapter index "Chapter 1", "Chapter 2", etc.
+Ensure all JSON is minified and strictly formatted. Real names of authors, publishers, channels, and books are required.`;
+
+      try {
+        titleEl.textContent = "AI Synthesis Running";
+        subEl.textContent = "Querying Meta Llama-3.3-70B model...";
+        bar.style.width = "40%";
+
+        const response = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            model: "meta/llama-3.3-70b-instruct",
+            messages: [
+              { "role": "system", "content": systemPrompt },
+              { "role": "user", "content": `Create a ${numModules}-part progressive course on "${topic}" focusing on ${focus}. Return ONLY valid minified JSON.` }
+            ],
+            temperature: 0.2,
+            top_p: 0.7,
+            max_tokens: 4000,
+            stream: false
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`NVIDIA NIM API responded with status ${response.status}`);
+        }
+
+        titleEl.textContent = "Parsing Curriculum JSON";
+        subEl.textContent = "Analyzing structure & token streams...";
+        bar.style.width = "75%";
+
+        const result = await response.json();
+        const content = result.choices[0].message.content.trim();
+        
+        // Clean potential markdown wrapper blocks
+        let cleanJson = content;
+        if (cleanJson.startsWith("```json")) {
+          cleanJson = cleanJson.substring(7);
+        } else if (cleanJson.startsWith("```")) {
+          cleanJson = cleanJson.substring(3);
+        }
+        if (cleanJson.endsWith("```")) {
+          cleanJson = cleanJson.substring(0, cleanJson.length - 3);
+        }
+        cleanJson = cleanJson.trim();
+
+        const parsedData = JSON.parse(cleanJson);
+
+        titleEl.textContent = "Hydrating State Engine";
+        subEl.textContent = "Saving locally and updating progress indicators...";
+        bar.style.width = "90%";
+
+        const slug = topic.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        const course = {
+          id: slug,
+          query: topic,
+          title: parsedData.title || `${topic} Accelerator`,
+          icon: parsedData.icon || "psychology",
+          chaptersCount: numModules,
+          progress: 0,
+          completedChapters: [],
+          completedQuests: [],
+          data: parsedData
+        };
+
+        // Overwrite or add to library at top
+        state.library = state.library.filter(c => c.id !== course.id);
+        state.library.unshift(course);
+        saveLibrary();
+
+        // Overwrite window.courseData and set active course
+        window.courseData = course.data;
+        state.activeCourse = course;
+
+        // Reset progress metrics
+        updateHeaderProgressGauge();
+
+        // Run requested render methods
+        if (typeof window.renderMap === 'function') window.renderMap();
+        if (typeof window.updateProgressMetrics === 'function') window.updateProgressMetrics();
+
+        bar.style.width = "100%";
+        setTimeout(() => {
+          showScreen('library');
+        }, 300);
+
+      } catch (err) {
+        console.error("NVIDIA NIM Error:", err);
+        titleEl.textContent = "AI Generation Failed";
+        subEl.textContent = `Error: ${err.message}. Falling back to dynamic mock...`;
+        bar.style.width = "100%";
+        
+        // Fallback to dynamic simulation so that the user experience is never broken
+        setTimeout(() => {
+          const fallbackCourse = generateCourseDataOnDemand(topic);
+          state.library = state.library.filter(c => c.id !== fallbackCourse.id);
+          state.library.unshift(fallbackCourse);
+          saveLibrary();
+          
+          window.courseData = fallbackCourse.data;
+          state.activeCourse = fallbackCourse;
+
+          if (typeof window.renderMap === 'function') window.renderMap();
+          if (typeof window.updateProgressMetrics === 'function') window.updateProgressMetrics();
+          
+          showScreen('library');
+        }, 1500);
+      }
+    }
 
     /* -------------------------------------------------------------
        F. AI GENERATION LOADING ROUTINE
