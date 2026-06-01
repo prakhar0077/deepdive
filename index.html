@@ -5548,13 +5548,23 @@
     }
 
     function loadCourseIntoPathScreen(courseId) {
-      const course = state.library.find(c => c.id === courseId);
-      if (!course) return;
+      const courseIndex = state.library.findIndex(c => c.id === courseId);
+      if (courseIndex === -1) return;
+      const course = state.library[courseIndex];
+
+      // Promote to index 0 (last opened course appears at the top)
+      if (courseIndex !== 0) {
+        state.library.splice(courseIndex, 1);
+        state.library.unshift(course);
+        saveLibrary();
+      }
 
       if (courseId === 'mba-marketing-placement-mastery') {
         course.data = PREMADE_COURSES['MBA Marketing Placement Mastery'];
       } else if (courseId === 'strategy-consulting-placement-mastery') {
         course.data = PREMADE_COURSES['Strategy & Consulting Placement Mastery'];
+      } else if (courseId === 'applied-game-theory-for-mba-life') {
+        course.data = PREMADE_COURSES['Applied Game Theory for MBA & Life'];
       }
 
       state.activeCourse = course;
@@ -7162,6 +7172,9 @@
       const featuredCard = document.createElement('div');
       featuredCard.className = 'featured-course-card';
       featuredCard.innerHTML = `
+        <button class="featured-delete-btn" title="Delete Course" style="position: absolute; top: 16px; right: 16px; width: 32px; height: 32px; border-radius: 50%; border: 1px solid rgba(26,28,29,0.08); background: rgba(255,255,255,0.7); display: flex; align-items: center; justify-content: center; cursor: pointer; color: #E53935; transition: all 0.2s ease; z-index: 10;" onmouseover="this.style.background='rgba(255,255,255,0.9)'; this.style.transform='scale(1.1)';" onmouseout="this.style.background='rgba(255,255,255,0.7)'; this.style.transform='scale(1)';">
+          <span class="material-symbols-outlined" style="font-size: 18px;">delete</span>
+        </button>
         <div class="featured-left">
           <span class="featured-tag-badge">Active DeepDive</span>
           <h3 class="featured-title">${lastStudied.title}</h3>
@@ -7183,6 +7196,23 @@
       `;
 
       featuredContainer.appendChild(featuredCard);
+
+      // Wire up featured card delete click
+      const deleteFeaturedBtn = featuredCard.querySelector('.featured-delete-btn');
+      if (deleteFeaturedBtn) {
+        deleteFeaturedBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const confirmDel = confirm(`Are you sure you want to delete the active course "${lastStudied.title}"?`);
+          if (confirmDel) {
+            state.library = state.library.filter(c => c.id !== lastStudied.id);
+            if (state.activeCourse && state.activeCourse.id === lastStudied.id) {
+              state.activeCourse = state.library.length > 0 ? state.library[0] : null;
+            }
+            saveLibrary();
+            renderLibrary();
+          }
+        });
+      }
 
       // Initialize slide swipe interaction
       initSlideToResumeControl(lastStudied.id);
@@ -7260,7 +7290,12 @@
           <div class="square-card-bottom-row" style="display: flex; justify-content: space-between; align-items: center; width: 100%; font-size: 11px; font-weight: 700; color: rgba(26,28,29,0.6); border-top: 1px solid rgba(26,28,29,0.08); padding-top: 10px; margin-top: 4px;">
             <span>${durationText}</span>
             <span>${filesCount}</span>
-            <span class="material-symbols-outlined bookmark-icon" style="font-size: 16px; color: #1a1c1d; cursor: pointer; font-variation-settings: 'FILL' 1; transition: all 0.2s ease;">bookmark</span>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              ${!course.isPremiumTemplate ? `
+                <span class="material-symbols-outlined delete-course-icon" title="Delete Course" style="font-size: 16px; color: #E53935; cursor: pointer; transition: all 0.2s ease; hover:scale(1.15);">delete</span>
+              ` : ''}
+              <span class="material-symbols-outlined bookmark-icon" style="font-size: 16px; color: #1a1c1d; cursor: pointer; font-variation-settings: 'FILL' 1; transition: all 0.2s ease;">bookmark</span>
+            </div>
           </div>
         `;
 
@@ -7278,6 +7313,25 @@
               bookmarkBtn.style.color = '#1a1c1d';
             }
           });
+        }
+
+        // Handle delete click
+        if (!course.isPremiumTemplate) {
+          const deleteBtn = card.querySelector('.delete-course-icon');
+          if (deleteBtn) {
+            deleteBtn.addEventListener('click', (e) => {
+              e.stopPropagation();
+              const confirmDel = confirm(`Are you sure you want to delete the course "${course.title}"?`);
+              if (confirmDel) {
+                state.library = state.library.filter(c => c.id !== course.id);
+                if (state.activeCourse && state.activeCourse.id === course.id) {
+                  state.activeCourse = state.library.length > 0 ? state.library[0] : null;
+                }
+                saveLibrary();
+                renderLibrary();
+              }
+            });
+          }
         }
 
         card.addEventListener('click', () => {
