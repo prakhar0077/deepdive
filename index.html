@@ -4838,6 +4838,11 @@
             // Filter out old preloaded non-marketing/non-strategy courses
             parsed = parsed.filter(course => course.id !== 'mobile-app-development-with-react-native' && course.id !== 'introduction-to-financial-management');
             state.library = parsed.map(course => {
+              if (course.query && PREMADE_COURSES[course.query]) {
+                course.data = PREMADE_COURSES[course.query];
+                course.title = PREMADE_COURSES[course.query].title;
+                course.icon = PREMADE_COURSES[course.query].icon;
+              }
               if (!course.completedQuests) {
                 course.completedQuests = [];
                 // Backfill from completedChapters
@@ -5938,6 +5943,25 @@
       const resourceTitle = questObj.label || (isVideo ? chapter.video.title : chapter.article.title);
       const resourceName = questObj.resourceName || (isVideo ? `${resourceTitle} Video Lecture` : `${resourceTitle} Study Guide`);
 
+      let authorName = questObj.author || '';
+      if (!authorName && questObj.resourceName) {
+        const byMatch = questObj.resourceName.match(/by\s+([^-(]+)/i);
+        if (byMatch) authorName = byMatch[1].trim();
+      }
+      if (!authorName) {
+        if (type === 'quiz') {
+          authorName = "DeepDive Editorial Board";
+        } else if (questObj.resourceName && questObj.resourceName.toLowerCase().includes("mckinsey")) {
+          authorName = "McKinsey Strategy Practice";
+        } else if (questObj.resourceName && questObj.resourceName.toLowerCase().includes("coca-cola")) {
+          authorName = "DeepDive Research Collective";
+        } else if (questObj.resourceName && questObj.resourceName.toLowerCase().includes("red bull")) {
+          authorName = "DeepDive Research Collective";
+        } else if (!isVideo) {
+          authorName = "DeepDive Research Collective";
+        }
+      }
+
       let redirectUrl = questObj.url;
       if (!redirectUrl) {
         const videoId = chapter.video.embedId || 'dQw4w9WgXcQ';
@@ -6033,10 +6057,10 @@
             <strong style="color: rgba(255, 255, 255, 0.5); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 2px;">Resource Name:</strong>
             <span class="resource-display-name" style="font-weight: 600; color: #ede0ff; font-size: 14px;">${resourceName}</span>
           </div>
-          ${questObj.author ? `
+          ${authorName ? `
             <div style="margin-bottom: 6px; font-size: 13px; color: rgba(255, 255, 255, 0.85); font-family: 'Plus Jakarta Sans', sans-serif;">
               <strong style="color: rgba(255, 255, 255, 0.5); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 2px;">Author(s):</strong>
-              ${questObj.author}
+              <span class="resource-display-author" style="font-weight: 500; color: #e8dbff;">${authorName}</span>
             </div>
           ` : ''}
           ${questObj.publisher ? `
